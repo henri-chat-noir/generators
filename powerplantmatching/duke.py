@@ -52,8 +52,7 @@ def duke(datasets, labels=['one', 'two'], singlematch=False,
     ----------
 
     datasets : pd.DataFrame or [pd.DataFrame]
-        A single dataframe is run in deduplication mode, while multiple ones
-        are linked
+        A single dataframe is run in deduplication mode, while multiple ones are linked
     labels : [str], default ['one', 'two']
         Labels for the linked dataframe
     singlematch: boolean, default False
@@ -74,6 +73,7 @@ def duke(datasets, labels=['one', 'two'], singlematch=False,
 
     duke_bin_dir = _package_data('duke_binaries')
 
+    # Routine to add all duke_bin_dir folders to enironment path
     os.environ['CLASSPATH'] = \
         os.pathsep.join([os.path.join(duke_bin_dir, r)
                          for r in os.listdir(duke_bin_dir)])
@@ -107,6 +107,7 @@ def duke(datasets, labels=['one', 'two'], singlematch=False,
             stdout = None
         args.append('config.xml')
 
+        print(f"Executing Duke Java process . . .")
         try:
             run = sub.Popen(args, stderr=sub.PIPE, cwd=tmpdir, stdout=stdout,
                             universal_newlines=True)

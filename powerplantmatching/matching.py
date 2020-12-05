@@ -20,7 +20,7 @@ Functions for linking and combining different datasets
 
 from __future__ import absolute_import, print_function
 
-from .core import get_config, _data_out, get_obj_if_Acc
+from .core import _get_config, _data_out, get_obj_if_Acc
 from .utils import read_csv_if_string, parmap, get_name
 from .duke import duke
 from .cleaning import clean_technology
@@ -31,7 +31,6 @@ import numpy as np
 from itertools import combinations
 import logging
 logger = logging.getLogger(__name__)
-
 
 def best_matches(links):
     """
@@ -151,7 +150,6 @@ def cross_matches(sets_of_pairs, labels=None):
             .drop('length', axis=1)
             .reindex(columns=labels))
 
-
 def link_multiple_datasets(datasets, labels, use_saved_matches=False,
                            config=None, **dukeargs):
     """
@@ -240,6 +238,7 @@ def combine_multiple_datasets(datasets, labels=None, use_saved_matches=False,
                 .reorder_levels([1, 0], axis=1)
                 .reindex(columns=config['target_columns'], level=0)
                 .reset_index(drop=True))
+
     crossmatches = link_multiple_datasets(datasets, labels,
                                           use_saved_matches=use_saved_matches,
                                           config=config, **dukeargs)

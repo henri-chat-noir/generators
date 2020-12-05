@@ -1,19 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2020 Fabian Hofmann (FIAS), Jonas Hoersch (KIT, IAI) and
-# Fabian Gotzens (FZJ, IEK-STE)
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Collection of power plant data bases and statistical data
 """
@@ -29,7 +13,7 @@ import pycountry
 import logging
 import entsoe as entsoe_api
 
-from .core import get_config, _package_data, _data_in, package_config
+from .core import _get_config, _package_data, _data_in, package_config
 from .utils import (parse_if_not_stored, fill_geoposition, correct_manually,
                     config_filter, set_column_name)
 from .heuristics import scale_to_net_capacities
@@ -39,7 +23,7 @@ from .cleaning import (gather_fueltype_info, gather_set_info,
 
 logger = logging.getLogger(__name__)
 cget = pycountry.countries.get
-net_caps = get_config()['display_net_caps']
+net_caps = _get_config()['display_net_caps']
 
 
 def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
@@ -62,7 +46,7 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     opsd_DE = parse_if_not_stored('OPSD_DE', update, config, na_values=' ')
     opsd_EU = parse_if_not_stored('OPSD_EU', update, config, na_values=' ')
@@ -163,7 +147,7 @@ def GEO(raw=False, config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     countries = config['target_countries']
     rename_cols = {'GEO_Assigned_Identification_Number': 'projectID',
@@ -235,7 +219,7 @@ def CARMA(raw=False, config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
 #    carmadata = pd.read_csv(_datconfig['CARMA']['fn'], low_memory=False)
     carma = parse_if_not_stored('CARMA', config=config, low_memory=False)
@@ -286,9 +270,9 @@ def JRC(raw=False, config=None, update=False):
     https://github.com/energy-modelling-toolkit/hydro-power-database.
     """
 
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
     url = config['JRC']['url']
-    default_url = get_config(_package_data('config.yaml'))['JRC']['url']
+    default_url = _get_config(_package_data('config.yaml'))['JRC']['url']
 
     err = IOError(f'The URL seems to be outdated, please copy the new url '
                   f'\n\n\t{default_url}\n\nin your custom config file '
@@ -351,7 +335,7 @@ def IWPDCY(config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     return (pd.read_csv(config['IWPDCY']['fn'],
                         encoding='utf-8', index_col='id')
@@ -385,7 +369,7 @@ def Capacity_stats(raw=False, level=2, config=None, update=False,
          Capacity statistics per country and fuel-type
     """
     if config is None:
-        config = get_config()
+        config = _get_config()
 
     df = parse_if_not_stored('Capacity_stats', update, config, index_col=0)
     if raw:
@@ -426,7 +410,7 @@ def GPD(raw=False, filter_other_dbs=True, update=False, config=None):
         defaults to powerplantmatching.config.get_config()
 
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     # if outdated have a look at
     # http://datasets.wri.org/dataset/globalpowerplantdatabase
@@ -513,7 +497,7 @@ def ESE(raw=False, update=False, config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
     df = parse_if_not_stored('ESE', update, config, error_bad_lines=False)
     if raw:
         return df
@@ -572,7 +556,7 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
     web%20api/Guide.html#_authentication_and_authorisation. Please save the
     token in your config.yaml file (key 'entsoe_token').
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     def parse_entsoe():
         assert entsoe_token is not None, "entsoe_token is missing"
@@ -703,7 +687,7 @@ def WEPP(raw=False, config=None):
         defaults to powerplantmatching.config.get_config()
 
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     # Define the appropriate datatype for each column (some columns e.g.
     # 'YEAR' cannot be integers, as there are N/A values, which np.int
@@ -872,7 +856,7 @@ def UBA(header=9, skipfooter=26, prune_wind=True, prune_solar=True,
         defaults to powerplantmatching.config.get_config()
 
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     def parse_func(url): return pd.read_excel(url, skipfooter=skipfooter,
                                               na_values='n.b.', header=header)
@@ -973,7 +957,7 @@ def BNETZA(header=9, sheet_name='Gesamtkraftwerksliste BNetzA',
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     url = config['BNETZA']['url']
 
@@ -1089,7 +1073,7 @@ def OPSD_VRE(config=None, raw=False):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     df = parse_if_not_stored('OPSD_VRE', index_col=0, low_memory=False)
     if raw:
@@ -1115,7 +1099,7 @@ def OPSD_VRE_country(country, config=None, raw=False):
     Get country specifig data from OPSD for renewables, if available.
     Available for DE, FR, PL, CH, DK, CZ and SE (last update: 09/2020).
     """
-    config = get_config() if config is None else config
+    config = _get_config() if config is None else config
 
     #there is a problem with GB in line 1651 (version 20/08/20) use low_memory
     df = parse_if_not_stored(f'OPSD_VRE_{country}', low_memory=False)
@@ -1147,7 +1131,7 @@ def IRENA_stats(config=None):
         defaults to powerplantmatching.config.get_config()
     """
     if config is None:
-        config = get_config()
+        config = _get_config()
 
     # Read the raw dataset
     df = pd.read_csv(_data_in('IRENA_CapacityStatistics2017.csv'),

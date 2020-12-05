@@ -1,25 +1,9 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2018 Fabian Hofmann (FIAS), Jonas Hoersch (KIT, IAI) and
-# Fabian Gotzens (FZJ, IEK-STE)
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Functions for vertically cleaning a dataset.
 """
-from __future__ import absolute_import, print_function
+# from __future__ import absolute_import, print_function
 
-from .core import get_config, _data_out, get_obj_if_Acc
+from .core import _get_config, _data_out, get_obj_if_Acc
 from .utils import get_name, set_column_name
 from .duke import duke
 
@@ -29,7 +13,6 @@ import pandas as pd
 import networkx as nx
 import logging
 logger = logging.getLogger(__name__)
-
 
 def clean_powerplantname(df):
     """
@@ -77,7 +60,6 @@ def clean_powerplantname(df):
             .sort_values('Name')
             .reset_index(drop=True))
 
-
 def gather_fueltype_info(df, search_col=['Name', 'Technology']):
     """
     Parses in search_col columns for distinct coal specifications, e.g.
@@ -98,9 +80,7 @@ def gather_fueltype_info(df, search_col=['Name', 'Technology']):
 
     return df.assign(Fueltype=fueltype)
 
-
-def gather_technology_info(df, search_col=['Name', 'Fueltype'],
-                           config=None):
+def gather_technology_info(df, search_col=['Name', 'Fueltype'], config=None):
     """
     Parses in search_col columns for distinct technology specifications, e.g.
     'Run-of-River', and passes this information to the 'Technology' column.
@@ -139,7 +119,6 @@ def gather_technology_info(df, search_col=['Name', 'Fueltype'],
 
     return df.assign(Technology=technology)
 
-
 def gather_set_info(df, search_col=['Name', 'Fueltype', 'Technology']):
     """
     Parses in search_col columns for distinct set specifications, e.g.
@@ -175,7 +154,6 @@ def gather_set_info(df, search_col=['Name', 'Fueltype', 'Technology']):
     df = df.assign(Set=Set)
     df.loc[:, 'Set'].fillna('PP', inplace=True)
     return df
-
 
 def clean_technology(df, generalize_hydros=False):
     """
@@ -215,7 +193,6 @@ def clean_technology(df, generalize_hydros=False):
     tech = tech.replace({'Ccgt': 'CCGT', 'Ocgt': 'OCGT'}, regex=True)
     return df.assign(Technology=tech)
 
-
 def cliques(df, dataduplicates):
     """
     Locate cliques of units which are determined to belong to the same
@@ -242,7 +219,6 @@ def cliques(df, dataduplicates):
         grouped.loc[inds] = i
 
     return df.assign(grouped=grouped)
-
 
 def aggregate_units(df, dataset_name=None,
                     pre_clean_name=True,

@@ -20,7 +20,8 @@ Utility functions for checking data completness and supporting other functions
 
 from __future__ import print_function, absolute_import
 
-from .core import get_config, _data_in, _package_data, logger, get_obj_if_Acc
+from .core import _get_config, _data_in, _package_data, logger, get_obj_if_Acc
+
 import os
 import time
 import pandas as pd
@@ -30,6 +31,9 @@ import numpy as np
 import multiprocessing
 from ast import literal_eval as liteval
 
+
+country_map = pd.read_csv(_package_data('country_codes.csv'))\
+                .replace({'name': {'Czechia': 'Czech Republic'}})
 
 def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
     """
@@ -76,9 +80,7 @@ def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
     else:
         return (lookup_single(df)/scaling).fillna(0.).round(3)
 
-
-def parse_if_not_stored(name, update=False, config=None,
-                        parse_func=None, **kwargs):
+def parse_if_not_stored(name, update=False, config=None, parse_func=None, **kwargs):
     if config is None:
         config = get_config()
     df_config = config[name]
@@ -86,7 +88,8 @@ def parse_if_not_stored(name, update=False, config=None,
 
     if not os.path.exists(path) or update:
         if parse_func is None:
-            logger.info(f'Retrieving data from {df_config["url"]}')
+            df_url = df_config['url']
+            logger.info(f'Retrieving data from {df_url}')
             data = pd.read_csv(df_config['url'], **kwargs)
         else:
             data = parse_func()
@@ -94,7 +97,6 @@ def parse_if_not_stored(name, update=False, config=None,
     else:
         data = pd.read_csv(path, **kwargs)
     return data
-
 
 def config_filter(df, name=None, config=None):
     """
@@ -113,7 +115,7 @@ def config_filter(df, name=None, config=None):
     df = get_obj_if_Acc(df)
 
     if config is None:
-        config = get_config()
+        config = _get_config()
     # individual filter from config.yaml
     if name is not None:
         queries = {k: v for source in config['matching_sources']
@@ -122,10 +124,10 @@ def config_filter(df, name=None, config=None):
             df = df.query(queries[name])
     countries = config['target_countries']
     fueltypes = config['target_fueltypes']
+    
     return (df.query("Country in @countries and Fueltype in @fueltypes")
             .reindex(columns=config['target_columns'])
             .reset_index(drop=True))
-
 
 def correct_manually(df, name, config=None):
     """
@@ -155,9 +157,8 @@ def correct_manually(df, name, config=None):
     df.update(corrections)
     return df.reset_index().reindex(columns=config['target_columns'])
 
-
-def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None,
-                                    **kwargs):
+def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None, **kwargs):
+   
     """
     Replace uncommon fueltype specifications as by 'Other'. This helps to
     compare datasources with Capacity statistics given by
@@ -186,7 +187,6 @@ def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None,
         df = df.fillna({'Fueltype': 'Other'})
     return df
 
-
 def read_csv_if_string(df):
     """
     Convenience function to import powerplant data source if a string is given.
@@ -195,7 +195,6 @@ def read_csv_if_string(df):
     if isinstance(data, six.string_types):
         df = getattr(data, df)()
     return df
-
 
 def to_categorical_columns(df):
     """
@@ -210,15 +209,14 @@ def to_categorical_columns(df):
              .assign(**{c: lambda df: df[c].cat.set_categories(v)
                         for c, v in cats.items()})
 
-
 def set_column_name(df, name):
+
     """
     Helper function to associate dataframe with a name. This is done with the
     columns-axis name, as pd.DataFrame do not have a name attribute.
     """
     df.columns.name = name
     return df
-
 
 def get_name(df):
     """
@@ -230,7 +228,6 @@ def get_name(df):
     else:
         return df.columns.name
 
-
 def to_list_if_other(obj):
     """
     Convenience function to ensure list-like output
@@ -239,7 +236,6 @@ def to_list_if_other(obj):
         return [obj]
     else:
         return obj
-
 
 def to_dict_if_string(s):
     """
@@ -250,7 +246,6 @@ def to_dict_if_string(s):
     else:
         return s
 
-
 def projectID_to_dict(df):
     """
     Convenience function to convert string of dict to dict type
@@ -260,7 +255,6 @@ def projectID_to_dict(df):
             lambda ds: liteval(ds)).unstack()))
     else:
         return df.assign(projectID=df.projectID.apply(lambda x: liteval(x)))
-
 
 def select_by_projectID(df, projectID, dataset_name=None):
     """
@@ -273,7 +267,6 @@ def select_by_projectID(df, projectID, dataset_name=None):
     else:
         return df[df['projectID'].apply(lambda x:
                                         projectID in sum(x.values(), []))]
-
 
 def update_saved_matches_for_(name):
     """
@@ -299,7 +292,6 @@ def update_saved_matches_for_(name):
     for to_match in dfs:
         compare_two_datasets([collect(to_match), df], [to_match, name])
 
-
 def fun(f, q_in, q_out):
     """
     Helper function for multiprocessing in classes/functions
@@ -309,7 +301,6 @@ def fun(f, q_in, q_out):
         if i is None:
             break
         q_out.put((i, f(x)))
-
 
 def parmap(f, arg_list, config=None):
     """
@@ -326,7 +317,8 @@ def parmap(f, arg_list, config=None):
         list of arguments mapped to f
     """
     if config is None:
-        config = get_config()
+        config = _get_config()
+
     if config['parallel_duke_processes']:
         nprocs = min(multiprocessing.cpu_count(), config['process_limit'])
         logger.info('Run process with {} parallel threads.'.format(nprocs))
@@ -346,13 +338,9 @@ def parmap(f, arg_list, config=None):
         [p.join() for p in proc]
 
         return [x for i, x in sorted(res)]
+
     else:
         return list(map(f, arg_list))
-
-
-country_map = pd.read_csv(_package_data('country_codes.csv'))\
-                .replace({'name': {'Czechia': 'Czech Republic'}})
-
 
 def country_alpha2(country):
     """
@@ -365,7 +353,6 @@ def country_alpha2(country):
     except KeyError:
         return ''
 
-
 def convert_alpha2_to_country(df):
     df = get_obj_if_Acc(df)
     dic = {'EL': 'GR',  # needed, as some datasets use for Greece and United K.
@@ -373,14 +360,12 @@ def convert_alpha2_to_country(df):
     return df.assign(Country=df.Country.replace(dic)
                      .map(country_map.set_index('alpha_2')['name']))
 
-
 def convert_country_to_alpha2(df):
     df = get_obj_if_Acc(df)
     alpha2 = df.Country.map(country_map.set_index('name')['alpha_2'])\
                .fillna(country_map.dropna(subset=['official_name'])
                        .set_index('official_name')['alpha_2'])
     return df.assign(Country=alpha2)
-
 
 def breakdown_matches(df):
     """
@@ -424,7 +409,6 @@ def breakdown_matches(df):
                       .set_index('projectID', append=True).droplevel(-2).index,
                       inplace=False)
             .rename_axis(index=['id', 'source', 'projectID']))
-
 
 def restore_blocks(df, mode=2, config=None):
     """
@@ -479,9 +463,7 @@ def restore_blocks(df, mode=2, config=None):
     res.update(df_blocks)
     return res
 
-
-def parse_Geoposition(location, zipcode='', country='',
-                      use_saved_locations=False, saved_only=False):
+def parse_Geoposition(location, zipcode='', country='', use_saved_locations=False, saved_only=False):
     """
     Nominatim request for the Geoposition of a specific location in a country.
     Returns a tuples with (latitude, longitude, country) if the request was
@@ -524,7 +506,6 @@ def parse_Geoposition(location, zipcode='', country='',
         return pd.Series({'Name': location, 'Country': country,
                           'lat': gdata.latitude, 'lon': gdata.longitude})
 
-
 def fill_geoposition(df, use_saved_locations=False, saved_only=False):
     """
     Fill missing 'lat' and 'lon' values. Uses geoparsing with the value given
@@ -541,7 +522,7 @@ def fill_geoposition(df, use_saved_locations=False, saved_only=False):
     """
     df = get_obj_if_Acc(df)
 
-    if use_saved_locations and get_config()['google_api_key'] is None:
+    if use_saved_locations and _get_config()['google_api_key'] is None:
         logger.warning('Geoparsing not possible as no google api key was '
                        'found, please add the key to your config.yaml if you '
                        'want to enable it.')

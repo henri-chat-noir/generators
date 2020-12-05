@@ -18,7 +18,7 @@
 Functions to modify and adjust power plant datasets
 """
 
-from .core import get_config, _package_data, get_obj_if_Acc
+from .core import _get_config, _package_data, get_obj_if_Acc
 from .utils import lookup, get_name
 
 import pandas as pd
