@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 cget = pycountry.countries.get
 net_caps = CONFIG['display_net_caps']
 
-def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
+def OPSD(df=None, rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
          statusDE=['operating', 'reserve', 'special_case',
                    'shutdown_temporary'], config=None):
     """
@@ -134,8 +134,7 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
             .pipe(clean_powerplantname)
             .pipe(clean_technology))
 
-
-def GEO(raw=False, config=None):
+def GEO(df=None, raw=False, config=None):
     """
     Importer for the GEO database.
 
@@ -168,7 +167,7 @@ def GEO(raw=False, config=None):
     if raw:
         return geo
     geo = geo.rename(columns=rename_cols)
-
+    
     units = parse_if_not_stored('GEO_units', config=CONFIG, low_memory=False)
 
     # map from units to plants
@@ -187,6 +186,7 @@ def GEO(raw=False, config=None):
 
     _ = units.Effiency['mean']
     geo['Effiency'] = geo.projectID.map(_)
+    
     return (geo.assign(projectID=lambda s: 'GEO' + s.projectID.astype(str))
             .query("Country in @countries")
             .replace({col: {'Gas': 'Natural Gas'} for col in
@@ -206,8 +206,7 @@ def GEO(raw=False, config=None):
             .pipe(correct_manually, 'GEO', config=CONFIG)
             )
 
-
-def CARMA(raw=False, config=None):
+def CARMA(df=None, raw=False, config=None):
     """
     Importer for the Carma database.
 
@@ -264,8 +263,7 @@ def CARMA(raw=False, config=None):
             .pipe(correct_manually, 'CARMA', config=CONFIG)
             )
 
-
-def JRC(raw=False, config=None, update=False):
+def JRC(df=None, raw=False, config=None, update=False):
     """
     Importer for the JRC Hydro-power plants database retrieves from
     https://github.com/energy-modelling-toolkit/hydro-power-database.
@@ -329,8 +327,7 @@ def JRC(raw=False, config=None, update=False):
                                     .replace({0: 'a', 1: 'b', 2: 'c', 3: 'd'}))
     return df
 
-
-def IWPDCY(config=None):
+def IWPDCY(df=None, config=None):
     """
     This data is not yet available. Was extracted manually from
     the 'International Water Power & Dam Country Yearbook'.
@@ -354,8 +351,7 @@ def IWPDCY(config=None):
             .pipe(gather_set_info)
             .pipe(correct_manually, 'IWPDCY', config=config))
 
-
-def Capacity_stats(raw=False, level=2, config=None, update=False,
+def Capacity_stats(df=None, raw=False, level=2, config=None, update=False,
                    source='entsoe SO&AF', year='2016'):
     """
     Standardize the aggregated capacity statistics provided by the ENTSO-E.
@@ -403,8 +399,7 @@ def Capacity_stats(raw=False, level=2, config=None, update=False,
           .pipe(set_column_name, source.title()))
     return df
 
-
-def GPD(raw=False, filter_other_dbs=True, update=False, config=None):
+def GPD(df=None, raw=False, filter_other_dbs=True, update=False, config=None):
     """
     Importer for the `Global Power Plant Database`.
 
@@ -471,7 +466,6 @@ def GPD(raw=False, filter_other_dbs=True, update=False, config=None):
             # .pipe(correct_manually, 'GPD', config=config)
             )
 
-
 # def WIKIPEDIA(raw=False):
 #    from bs4 import BeautifulSoup
 #
@@ -484,8 +478,7 @@ def GPD(raw=False, filter_other_dbs=True, update=False, config=None):
 #    headers = headers[:len(dfs)]
 #    df = pd.concat(dfs, keys=headers, axis=0, sort=True)
 
-
-def ESE(raw=False, update=False, config=None):
+def ESE(df=None, raw=False, update=False, config=None):
     """
     Importer for the ESE database.
     This database is not given within the repository because of its
@@ -531,88 +524,13 @@ def ESE(raw=False, update=False, config=None):
             # .pipe(correct_manually, 'ESE', config=config)
             )
 
-
-def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
-    """
-    Importer for the list of installed generators provided by the ENTSO-E
-    Trasparency Project. Geographical information is not given.
-    If update=True, the dataset is parsed through a request to
-    'https://transparency.entsoe.eu/generation/r2/\
-    installedCapacityPerProductionUnit/show',
-    Internet connection requiered. If raw=True, the same request is done, but
-    the unprocessed data is returned.
-
-    Parameters
-    ----------
-    update : Boolean, Default False
-        Whether to update the database through a request to the ENTSO-E
-        transparency plattform
-    raw : Boolean, Default False
-        Whether to return the raw data, obtained from the request to
-        the ENTSO-E transparency platform
-    entsoe_token: String
-        Security token of the ENTSO-E Transparency platform
-    config : dict, default None
-        Add custom specific configuration,
-        e.g. powerplantmatching.config.get_config(target_countries='Italy'),
-        defaults to powerplantmatching.config.get_config()
-
-    Note: For obtaining a security token refer to section 2 of the
-    RESTful API documentation of the ENTSOE-E Transparency platform
-    https://transparency.entsoe.eu/content/static_content/Static%20content/
-    web%20api/Guide.html#_authentication_and_authorisation. Please save the
-    token in your config.yaml file (key 'entsoe_token').
-    """
-    # config = _get_config() if config is None else config
-
-    def parse_entsoe():
-        assert entsoe_token is not None, "entsoe_token is missing"
-        url = 'https://transparency.entsoe.eu/api'
-        # retrieved from pd.read_html('https://transparency.entsoe.eu/content/stat
-        # ic_content/Static%20content/web%20api/Guide.html#_request_methods')[-1]
-        domains = list(entsoe_api.mappings.BIDDING_ZONES.values())
-
-        level1 = ['registeredResource.name', 'registeredResource.mRID']
-        level2 = ['voltage_PowerSystemResources.highVoltageLimit', 'psrType']
-        level3 = ['quantity']
-
-        def namespace(element):
-            m = re.match('\{.*\}', element.tag)
-            return m.group(0) if m else ''
-
-        entsoe = pd.DataFrame()
-        logger.info(f"Retrieving data from {url}")
-        for domain in domains:
-            ret = requests.get(url, params=dict(
-                securityToken=entsoe_token, documentType='A71',
-                processType='A33', In_Domain=domain,
-                periodStart='201612312300', periodEnd='201712312300'))
-            etree = ET.fromstring(ret.content)
-            ns = namespace(etree)
-            df_domain = pd.DataFrame(columns=level1+level2+level3+['Country'])
-            for i, level in enumerate([level1, level2, level3]):
-                for arg in level:
-                    df_domain[arg] = [
-                        e.text for e in etree.findall('*/' * (i+1) + ns + arg)]
-            entsoe = entsoe.append(df_domain, ignore_index=True)
-        return entsoe
-
-    if CONFIG['entsoe_token'] is not None:
-        entsoe_token = CONFIG['entsoe_token']
-        df = parse_if_not_stored('ENTSOE', update, CONFIG, parse_entsoe)
-    else:
-        if update:
-            logger.info('No entsoe_token in config.yaml given, '
-                        'falling back to stored version.')
-        df = parse_if_not_stored('ENTSOE', update, CONFIG)
-
-    if raw:
-        return df
-
+def ENTSOE(df=None, update=False, raw=False, entsoe_token=None, config=None):
+    
     fuelmap = entsoe_api.mappings.PSRTYPE_MAPPINGS
     country_map_entsoe = pd.read_csv(_package_data('entsoe_country_codes.csv'),
                                      index_col=0).rename(index=str).Country
     countries = CONFIG['target_countries']
+
 
     return (df.rename(columns={'psrType': 'Fueltype',
                                'quantity': 'Capacity',
@@ -679,7 +597,7 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
 #    df = pd.concat([df.drop(columns='tags'), df.tags.apply(pd.Series)], axis=1)
 #
 
-def WEPP(raw=False, config=None):
+def WEPP(df=None, raw=False, config=None):
     """
     Importer for the standardized WEPP (Platts, World Elecrtric Power
     Plants Database). This database is not provided by this repository because
@@ -846,7 +764,7 @@ def WEPP(raw=False, config=None):
             .pipe(correct_manually, 'WEPP', config=config))
 
 
-def UBA(header=9, skipfooter=26, prune_wind=True, prune_solar=True,
+def UBA(df=None, header=9, skipfooter=26, prune_wind=True, prune_solar=True,
         config=None, update=False, raw=False):
     """
     Importer for the UBA Database. Please download the data from
@@ -942,7 +860,7 @@ def UBA(header=9, skipfooter=26, prune_wind=True, prune_solar=True,
             )
 
 
-def BNETZA(header=9, sheet_name='Gesamtkraftwerksliste BNetzA',
+def BNETZA(df=None, header=9, sheet_name='Gesamtkraftwerksliste BNetzA',
            prune_wind=True, prune_solar=True, raw=False, update=False,
            config=None):
     """
@@ -1064,8 +982,7 @@ def BNETZA(header=9, sheet_name='Gesamtkraftwerksliste BNetzA',
             # .pipe(correct_manually, 'BNETZA', config=config)
             )
 
-
-def OPSD_VRE(config=None, raw=False):
+def OPSD_VRE(df=None, config=None, raw=False):
     """
     Importer for the OPSD (Open Power Systems Data) renewables (VRE)
     database.
@@ -1126,8 +1043,7 @@ def OPSD_VRE_country(country, config=None, raw=False):
               .pipe(config_filter, config=config)
               .drop('Name', axis=1))
 
-
-def IRENA_stats(config=None):
+def IRENA_stats(df=None, config=None):
     """
     Reads the IRENA Capacity Statistics 2017 Database
 

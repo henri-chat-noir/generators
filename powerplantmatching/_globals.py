@@ -1,4 +1,5 @@
 from os import path
+import pandas as pd
 import yaml
 
 def _package_data(filename):
@@ -70,3 +71,7 @@ DATASET_LABELS = [label for label in CONFIG['matching_sources']]
 #   return df_by_name(datasets)
 DATASET_LABELS.sort()
     
+COUNTRY_MAP = pd.read_csv(_package_data('country_codes.csv'))\
+                .replace({'name': {'Czechia': 'Czech Republic'}})
+
+

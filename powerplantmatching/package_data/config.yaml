@@ -21,8 +21,8 @@ fully_included_sources:
     - ENTSOE: Country not in ['Spain', 'Switzerland', 'United Kingdom']
     - CARMA: Country == 'France' and Fueltype == 'Hydro'
     - GEO: Country == 'Czech Republic' and Fueltype == 'Lignite'
-    # - ESE: Country not in ['Switzerland']
-    # - IWPDCY: lat == lat and Country == 'Sweden'
+    # ESE: Country not in ['Switzerland']
+    # IWPDCY: lat == lat and Country == 'Sweden'
 
 parallel_duke_processes: false
 process_limit: 2
