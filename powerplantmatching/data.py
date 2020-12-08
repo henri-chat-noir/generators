@@ -2,8 +2,6 @@
 Collection of power plant data bases and statistical data
 """
 
-from __future__ import print_function, absolute_import
-
 import numpy as np
 import pandas as pd
 import requests
@@ -11,20 +9,23 @@ import xml.etree.ElementTree as ET
 import re
 import pycountry
 import logging
-import entsoe as entsoe_api
 
-from .core import _get_config, _package_data, _data_in, package_config
-from .utils import (parse_if_not_stored, fill_geoposition, correct_manually,
+import entsoe as entsoe_api
+from _globals import CONFIG
+
+# from core import _get_config, _package_data, _data_in, package_config
+from _globals import _package_data
+
+from utils import (parse_if_not_stored, fill_geoposition, correct_manually,
                     config_filter, set_column_name)
-from .heuristics import scale_to_net_capacities
-from .cleaning import (gather_fueltype_info, gather_set_info,
+from heuristics import scale_to_net_capacities
+from cleaning import (gather_fueltype_info, gather_set_info,
                        gather_technology_info, clean_powerplantname,
                        clean_technology)
 
 logger = logging.getLogger(__name__)
 cget = pycountry.countries.get
-net_caps = _get_config()['display_net_caps']
-
+net_caps = CONFIG['display_net_caps']
 
 def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
          statusDE=['operating', 'reserve', 'special_case',
@@ -46,10 +47,10 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = _get_config() if config is None else config
+    # config = _get_config() if config is None else config
 
-    opsd_DE = parse_if_not_stored('OPSD_DE', update, config, na_values=' ')
-    opsd_EU = parse_if_not_stored('OPSD_EU', update, config, na_values=' ')
+    opsd_DE = parse_if_not_stored('OPSD_DE', update, CONFIG, na_values=' ')
+    opsd_EU = parse_if_not_stored('OPSD_EU', update, CONFIG, na_values=' ')
     if rawEU and rawDE:
         raise(NotImplementedError('''
                 It is not possible to show both DE and EU raw databases at the
@@ -85,7 +86,7 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
                .eval('DateRetrofit = DateIn')
                .assign(projectID=lambda s: 'OEU'
                        + pd.Series(s.index.astype(str), s.index))
-               .reindex(columns=config['target_columns']))
+               .reindex(columns=CONFIG['target_columns']))
 
     opsd_DE = (opsd_DE.rename(columns=str.title)
                       .rename(columns={'Lat': 'lat',
@@ -106,7 +107,7 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
                                   d.Retrofit.fillna(d.DateIn)))
     if statusDE is not None:
         opsd_DE = opsd_DE.loc[opsd_DE.Status.isin(statusDE)]
-    opsd_DE = opsd_DE.reindex(columns=config['target_columns'])
+    opsd_DE = opsd_DE.reindex(columns=CONFIG['target_columns'])
     return (pd.concat([opsd_EU, opsd_DE], ignore_index=True)
             .replace(dict(Fueltype={'Biomass and biogas': 'Bioenergy',
                                     'Fossil fuels': np.nan,
@@ -128,7 +129,7 @@ def OPSD(rawEU=False, rawDE=False, rawDE_withBlocks=False, update=False,
             .powerplant.convert_alpha2_to_country()
             .pipe(set_column_name, 'OPSD')
             # .pipe(correct_manually, 'OPSD', config=config)
-            .pipe(config_filter, name='OPSD', config=config)
+            .pipe(config_filter, name='OPSD', config=CONFIG)
             .pipe(gather_set_info)
             .pipe(clean_powerplantname)
             .pipe(clean_technology))
@@ -147,9 +148,9 @@ def GEO(raw=False, config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = _get_config() if config is None else config
+    # config = _get_config() if config is None else config
 
-    countries = config['target_countries']
+    countries = CONFIG['target_countries']
     rename_cols = {'GEO_Assigned_Identification_Number': 'projectID',
                    'Name': 'Name',
                    'Type': 'Fueltype',
@@ -163,12 +164,12 @@ def GEO(raw=False, config=None):
                    'Longitude_Start': 'lon',
                    'Latitude_Start': 'lat'}
 
-    geo = parse_if_not_stored('GEO', config=config, low_memory=False)
+    geo = parse_if_not_stored('GEO', config=CONFIG, low_memory=False)
     if raw:
         return geo
     geo = geo.rename(columns=rename_cols)
 
-    units = parse_if_not_stored('GEO_units', config=config, low_memory=False)
+    units = parse_if_not_stored('GEO_units', config=CONFIG, low_memory=False)
 
     # map from units to plants
     units['DateIn'] = units.Date_Commissioned_dt.str[:4].astype(float)
@@ -193,16 +194,16 @@ def GEO(raw=False, config=None):
                        'FuelClassification2'}})
             .pipe(gather_fueltype_info, search_col=['FuelClassification1'])
             .pipe(gather_technology_info, search_col=['FuelClassification1'],
-                  config=config)
+                  config=CONFIG)
             .pipe(gather_set_info)
             .pipe(set_column_name, 'GEO')
-            .pipe(config_filter, name='GEO', config=config)
+            .pipe(config_filter, name='GEO', config=CONFIG)
             .pipe(clean_powerplantname)
             .pipe(clean_technology, generalize_hydros=True)
             .pipe(scale_to_net_capacities,
-                  (not config['GEO']['net_capacity']))
-            .pipe(config_filter, name='GEO', config=config)
-            .pipe(correct_manually, 'GEO', config=config)
+                  (not CONFIG['GEO']['net_capacity']))
+            .pipe(config_filter, name='GEO', config=CONFIG)
+            .pipe(correct_manually, 'GEO', config=CONFIG)
             )
 
 
@@ -219,10 +220,10 @@ def CARMA(raw=False, config=None):
         e.g. powerplantmatching.config.get_config(target_countries='Italy'),
         defaults to powerplantmatching.config.get_config()
     """
-    config = _get_config() if config is None else config
+    # config = _get_config() if config is None else config
 
 #    carmadata = pd.read_csv(_datconfig['CARMA']['fn'], low_memory=False)
-    carma = parse_if_not_stored('CARMA', config=config, low_memory=False)
+    carma = parse_if_not_stored('CARMA', config=CONFIG, low_memory=False)
     if raw:
         return carma
 
@@ -237,7 +238,7 @@ def CARMA(raw=False, config=None):
                              'plant': 'Name',
                              'plant.id': 'projectID'})
             .assign(projectID=lambda df: 'CARMA' + df.projectID.astype(str))
-            .loc[lambda df: df.Country.isin(config['target_countries'])]
+            .loc[lambda df: df.Country.isin(CONFIG['target_countries'])]
             .replace(dict(Fueltype={'COAL': 'Hard Coal',
                                     'WAT': 'Hydro',
                                     'FGAS': 'Natural Gas',
@@ -255,12 +256,12 @@ def CARMA(raw=False, config=None):
             .pipe(clean_powerplantname)
             .drop_duplicates()
             .pipe(set_column_name, 'CARMA')
-            .pipe(config_filter, name='CARMA', config=config)
-            .pipe(gather_technology_info, config=config)
+            .pipe(config_filter, name='CARMA', config=CONFIG)
+            .pipe(gather_technology_info, config=CONFIG)
             .pipe(gather_set_info)
             .pipe(clean_technology)
-            .pipe(scale_to_net_capacities, not config['CARMA']['net_capacity'])
-            .pipe(correct_manually, 'CARMA', config=config)
+            .pipe(scale_to_net_capacities, not CONFIG['CARMA']['net_capacity'])
+            .pipe(correct_manually, 'CARMA', config=CONFIG)
             )
 
 
@@ -270,14 +271,16 @@ def JRC(raw=False, config=None, update=False):
     https://github.com/energy-modelling-toolkit/hydro-power-database.
     """
 
-    config = _get_config() if config is None else config
+    # config = _get_config() if config is None else config
     url = config['JRC']['url']
-    default_url = _get_config(_package_data('config.yaml'))['JRC']['url']
+    # default_url = CONFIG['JRC']['url']
 
+    """
     err = IOError(f'The URL seems to be outdated, please copy the new url '
                   f'\n\n\t{default_url}\n\nin your custom config file '
                   f'\n\n\t{package_config["custom_config"]}\n\nunder tag "JRC" '
                   '-> "url"')
+    """
 
     def parse_func():
         import requests
@@ -556,7 +559,7 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
     web%20api/Guide.html#_authentication_and_authorisation. Please save the
     token in your config.yaml file (key 'entsoe_token').
     """
-    config = _get_config() if config is None else config
+    # config = _get_config() if config is None else config
 
     def parse_entsoe():
         assert entsoe_token is not None, "entsoe_token is missing"
@@ -590,14 +593,14 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
             entsoe = entsoe.append(df_domain, ignore_index=True)
         return entsoe
 
-    if config['entsoe_token'] is not None:
-        entsoe_token = config['entsoe_token']
-        df = parse_if_not_stored('ENTSOE', update, config, parse_entsoe)
+    if CONFIG['entsoe_token'] is not None:
+        entsoe_token = CONFIG['entsoe_token']
+        df = parse_if_not_stored('ENTSOE', update, CONFIG, parse_entsoe)
     else:
         if update:
             logger.info('No entsoe_token in config.yaml given, '
                         'falling back to stored version.')
-        df = parse_if_not_stored('ENTSOE', update, config)
+        df = parse_if_not_stored('ENTSOE', update, CONFIG)
 
     if raw:
         return df
@@ -605,13 +608,13 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
     fuelmap = entsoe_api.mappings.PSRTYPE_MAPPINGS
     country_map_entsoe = pd.read_csv(_package_data('entsoe_country_codes.csv'),
                                      index_col=0).rename(index=str).Country
-    countries = config['target_countries']
+    countries = CONFIG['target_countries']
 
     return (df.rename(columns={'psrType': 'Fueltype',
                                'quantity': 'Capacity',
                                'registeredResource.mRID': 'projectID',
                                'registeredResource.name': 'Name'})
-            .reindex(columns=config['target_columns'])
+            .reindex(columns=CONFIG['target_columns'])
             .replace({'Fueltype': fuelmap})
             .drop_duplicates('projectID')
             .assign(EIC=lambda df: df.projectID,
@@ -635,12 +638,12 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
             .pipe(clean_powerplantname)
             .pipe(fill_geoposition, use_saved_locations=True, saved_only=True)
             .query('Capacity > 0')
-            .pipe(gather_technology_info, config=config)
+            .pipe(gather_technology_info, config=CONFIG)
             .pipe(gather_set_info)
             .pipe(clean_technology)
             .pipe(set_column_name, 'ENTSOE')
-            .pipe(config_filter, name='ENTSOE', config=config)
-            .pipe(correct_manually, 'ENTSOE', config=config)
+            .pipe(config_filter, name='ENTSOE', config=CONFIG)
+            .pipe(correct_manually, 'ENTSOE', config=CONFIG)
             )
 
 

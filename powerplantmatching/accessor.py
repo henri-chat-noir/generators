@@ -32,17 +32,17 @@ class PowerPlantAccessor():
         self._obj = pandas_obj
 
     # from .plot import powerplant_map as plot_map
-    from .utils import (lookup, set_uncommon_fueltypes_to_other,
+    from utils import (lookup, set_uncommon_fueltypes_to_other,
                         select_by_projectID, breakdown_matches,
                         fill_geoposition, convert_country_to_alpha2,
                         convert_alpha2_to_country)
     # from .export import to_pypsa_names, map_bus, map_country_bus
-    from .heuristics import (
+    from heuristics import (
         extend_by_non_matched, scale_to_net_capacities,
         fill_missing_commyears, extend_by_VRE, fill_missing_duration,
         rescale_capacities_to_country_totals, fill_missing_decommyears)
-    from .cleaning import clean_powerplantname, aggregate_units
-    from .matching import reduce_matched_dataframe
+    from cleaning import clean_powerplantname, aggregate_units
+    from matching import reduce_matched_dataframe
 
     def plot_aggregated(self, by=['Country', 'Fueltype'], figsize=(12, 20),
                         **kwargs):
@@ -62,7 +62,7 @@ class PowerPlantAccessor():
 
         """
         import matplotlib.pyplot as plt
-        from .utils import lookup, convert_country_to_alpha2
+        from utils import lookup, convert_country_to_alpha2
         subplots = True if len(by) > 1 else False
         fig, ax = plt.subplots(figsize=figsize, **kwargs)
         df = lookup(convert_country_to_alpha2(self._obj), by=by)
@@ -79,9 +79,9 @@ class PowerPlantAccessor():
 
     def match_with(self, df, labels=None, use_saved_matches=False,
                    config=None, reduced=True, **dukeargs):
-        from .matching import (combine_multiple_datasets,
+        from matching import (combine_multiple_datasets,
                                reduce_matched_dataframe)
-        from .utils import to_list_if_other
+        from utils import to_list_if_other
 
         dfs = [self._obj] + to_list_if_other(df)
         res = combine_multiple_datasets(

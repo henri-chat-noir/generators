@@ -22,7 +22,7 @@ import shutil
 import tempfile
 import pandas as pd
 import numpy as np
-from .core import _package_data
+from _globals import _package_data
 logger = logging.getLogger(__name__)
 
 

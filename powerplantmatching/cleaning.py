@@ -3,9 +3,11 @@ Functions for vertically cleaning a dataset.
 """
 # from __future__ import absolute_import, print_function
 
-from .core import _get_config, _data_out, get_obj_if_Acc
-from .utils import get_name, set_column_name
-from .duke import duke
+# from core import _get_config, _data_out, get_obj_if_Acc
+from core import _data_out, get_obj_if_Acc
+
+from utils import get_name, set_column_name
+from duke import duke
 
 import os
 import numpy as np
@@ -293,11 +295,11 @@ def aggregate_units(df, dataset_name=None,
     if pre_clean_name:
         df = clean_powerplantname(df)
 
+    print()
     logger.info("Aggregating blocks to entire units in '{}'."
                 .format(dataset_name))
 
-    path_name = _data_out('aggregations/aggregation_groups_{}.csv'
-                          .format(dataset_name), config=config)
+    path_name = _data_out(f'aggregations/aggregation_groups_{dataset_name}.csv')
 
     if use_saved_aggregation & save_aggregation:
         if os.path.exists(path_name):

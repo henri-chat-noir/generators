@@ -1,25 +1,10 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2018 Fabian Hofmann (FIAS), Jonas Hoersch (KIT, IAI) and
-# Fabian Gotzens (FZJ, IEK-STE)
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Functions to modify and adjust power plant datasets
 """
 
-from .core import _get_config, _package_data, get_obj_if_Acc
-from .utils import lookup, get_name
+# from core import _get_config, _package_data, get_obj_if_Acc
+from core import get_obj_if_Acc
+from utils import lookup, get_name
 
 import pandas as pd
 import numpy as np
@@ -445,9 +430,9 @@ def gross_to_net_factors(reference='opsd', aggfunc='median',
                          return_entire_data=False):
     """
     """
-    from .cleaning import clean_technology
+    from cleaning import clean_technology
     if reference == 'opsd':
-        from .data import OPSD
+        from data import OPSD
         reference = OPSD(rawDE=True)
     df = reference.copy()
     df = df[df.capacity_gross_uba.notnull() & df.capacity_net_bnetza.notnull()]

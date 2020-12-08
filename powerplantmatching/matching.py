@@ -1,29 +1,13 @@
-# -*- coding: utf-8 -*-
-# Copyright 2016-2018 Fabian Hofmann (FIAS), Jonas Hoersch (KIT, IAI) and
-# Fabian Gotzens (FZJ, IEK-STE)
-
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Functions for linking and combining different datasets
 """
 
-from __future__ import absolute_import, print_function
+from _globals import CONFIG, DATASET_LABELS
+from core import _data_out, get_obj_if_Acc
 
-from .core import _get_config, _data_out, get_obj_if_Acc
-from .utils import read_csv_if_string, parmap, get_name
-from .duke import duke
-from .cleaning import clean_technology
+from utils import parmap
+from duke import duke
+from cleaning import clean_technology
 
 import os.path
 import pandas as pd
@@ -47,9 +31,7 @@ def best_matches(links):
             .groupby(links.iloc[:, 1], as_index=False, sort=False)
             .apply(lambda x: x.loc[x.scores.idxmax(), labels]))
 
-
-def compare_two_datasets(dfs, labels, use_saved_matches=False,
-                         country_wise=True, config=None, **dukeargs):
+def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_wise=True, **dukeargs):
     """
     Duke-based horizontal match of two databases. Returns the matched
     dataframe including only the matched entries in a multi-indexed
@@ -65,51 +47,45 @@ def compare_two_datasets(dfs, labels, use_saved_matches=False,
 
     Parameters
     ----------
-    dfs : list of pandas.Dataframe or strings
-        dataframes or csv-files to use for the matching
-    labels : list of strings
-        Names of the databases for the resulting dataframe
-
-
+    dfs : list of pandas.Dataframe to use for the matching
+    
     """
-    if config is None:
-        config = get_config()
-
-    dfs = list(map(read_csv_if_string, dfs))
+    
     if not ('singlematch' in dukeargs):
         dukeargs['singlematch'] = True
-    saving_path = _data_out('matches/matches_{}_{}.csv'
-                            .format(*np.sort(labels)), config=config)
+
+    saving_path = _data_out('matches/matches_{}_{}.csv'.format(*np.sort(label_pair)))
     if use_saved_matches:
         if os.path.exists(saving_path):
-            logger.info('Reading saved matches for dfs {} and {}'
-                        .format(*labels))
+            logger.info('Reading saved matches for df_pair {} and {}'
+                        .format(*label_pair))
             return pd.read_csv(saving_path, index_col=0)
         else:
             logger.warning("Non-existing saved matches for dataset '{}', '{}'"
-                           " continuing by matching again".format(*labels))
+                           " continuing by matching again".format(*label_pair))
 
-    def country_link(dfs, country):
+    def country_link(df_pair, country):
         # country_selector for both dataframes
-        sel_country_b = [df['Country'] == country for df in dfs]
+        sel_country_b = [df['Country'] == country for df in df_pair]
         # only append if country appears in both dataframse
         if all(sel.any() for sel in sel_country_b):
-            return duke([df[sel] for df, sel in zip(dfs, sel_country_b)],
+            return duke([df[sel] for df, sel in zip(df_pair, sel_country_b)],
                         labels, **dukeargs)
         else:
             return pd.DataFrame()
 
     if country_wise:
-        countries = config['target_countries']
-        links = pd.concat([country_link(dfs, c) for c in countries])
+        countries = CONFIG['target_countries']
+        links = pd.concat([country_link(df_pair, c) for c in countries])
     else:
-        links = duke(dfs, labels=labels, **dukeargs)
+        links = duke(df_pair, labels=label_pair, **dukeargs)
+
     matches = best_matches(links)
     matches.to_csv(saving_path)
+
     return matches
 
-
-def cross_matches(sets_of_pairs, labels=None):
+def cross_matches(sets_of_pairs, df_labels):
     """
     Combines multiple sets of pairs and returns one consistent
     dataframe. Identifiers of two datasets can appear in one row even
@@ -122,36 +98,34 @@ def cross_matches(sets_of_pairs, labels=None):
         list of pd.Dataframe's containing only the matches (without
         scores), obtained from the linkfile (duke() and
         best_matches())
-    labels : list of strings
+    df_labels : list of strings
         list of names of the databases, used for specifying the order
         of the output
 
     """
     m_all = sets_of_pairs
-    if labels is None:
-        labels = np.unique([x.columns for x in m_all])
-    matches = pd.DataFrame(columns=labels)
-    for i in labels:
+    matches = pd.DataFrame(columns=df_labels)
+    for i in df_labels:
         base = [m.set_index(i) for m in m_all if i in m]
         match_base = pd.concat(base, axis=1).reset_index()
         matches = pd.concat([matches, match_base], sort=True)
 
     matches = matches.drop_duplicates().reset_index(drop=True)
-    for i in labels:
+    for i in df_labels:
         matches = pd.concat([
             matches.groupby(i, as_index=False, sort=False)
                    .apply(lambda x: x.loc[x.isnull().sum(axis=1).idxmin()]),
             matches[matches[i].isnull()]
         ]).reset_index(drop=True)
+
     return (matches
             .assign(length=matches.notna().sum(axis=1))
             .sort_values(by='length', ascending=False)
             .reset_index(drop=True)
             .drop('length', axis=1)
-            .reindex(columns=labels))
+            .reindex(columns=df_labels))
 
-def link_multiple_datasets(datasets, labels, use_saved_matches=False,
-                           config=None, **dukeargs):
+def link_multiple_datasets(datasets, use_saved_matches=True, **dukeargs):
     """
     Duke-based horizontal match of multiple databases. Returns the
     matching indices of the datasets. Compares all properties of the
@@ -170,28 +144,20 @@ def link_multiple_datasets(datasets, labels, use_saved_matches=False,
         Names of the databases in alphabetical order and corresponding
         order to the datasets
     """
-    if config is None:
-        config = get_config()
-
-    dfs = list(map(read_csv_if_string, datasets))
-    labels = [get_name(df) for df in dfs]
-
-    combs = list(combinations(range(len(labels)), 2))
-
+    
     def comp_dfs(dfs_lbs):
+        print()
         logger.info('Comparing {0} with {1}'.format(*dfs_lbs[2:]))
-        return compare_two_datasets(dfs_lbs[:2], dfs_lbs[2:],
-                                    use_saved_matches=use_saved_matches,
-                                    config=config, **dukeargs)
 
-    mapargs = [[dfs[c], dfs[d], labels[c], labels[d]] for c, d in combs]
+        return compare_two_datasets(dfs_lbs[:2], dfs_lbs[2:], use_saved_matches=use_saved_matches, **dukeargs)
+    
+    combs = list(combinations(range(len(DATASET_LABELS)), 2)) # Returns list of tuples (0, 1), (0, 2), etc.
+    mapargs = [[datasets[c], datasets[d], DATASET_LABELS[c], DATASET_LABELS[d]] for c, d in combs]
     all_matches = parmap(comp_dfs, mapargs)
 
-    return cross_matches(all_matches, labels=labels)
+    return cross_matches(all_matches, DATASET_LABELS)
 
-
-def combine_multiple_datasets(datasets, labels=None, use_saved_matches=False,
-                              config=None, **dukeargs):
+def combine_multiple_datasets(dfs, use_saved_matches=True, **dukeargs):
     """
     Duke-based horizontal match of multiple databases. Returns the
     matched dataframe including only the matched entries in a
@@ -205,16 +171,13 @@ def combine_multiple_datasets(datasets, labels=None, use_saved_matches=False,
 
     Parameters
     ----------
-    datasets : list of pandas.Dataframe or strings
-        dataframes or csv-files to use for the matching
+    datasets : list of pandas.Dataframes to use for the matching
     labels : list of strings
         Names of the databases in alphabetical order and corresponding
         order to the datasets
     """
-    if config is None:
-        config = get_config()
-
-    def combined_dataframe(cross_matches, datasets, config):
+    
+    def combined_dataframe(cross_matches, dfs):
         """
         Use this function to create a matched dataframe on base of the
         cross matches and a list of the databases. Always order the
@@ -223,30 +186,28 @@ def combine_multiple_datasets(datasets, labels=None, use_saved_matches=False,
         Parameters
         ----------
         cross_matches : pandas.Dataframe of the matching indexes of
-            the databases, created with
-            powerplant_collection.cross_matches()
-        datasets : list of pandas.Dataframes or csv-files in the same
-            order as in cross_matches
+            the databases, created with powerplant_collection.cross_matches()
+        dfs : list of pandas.Dataframes in the same order as in cross_matches
         """
-        datasets = list(map(read_csv_if_string, datasets))
-        for i, data in enumerate(datasets):
-            datasets[i] = (data
+        
+        # datasets = list(map(read_csv_if_string, datasets))
+
+        for i, df in enumerate(dfs):
+            dfs[i] = (df
                            .reindex(cross_matches.iloc[:, i])
                            .reset_index(drop=True))
-        return (pd.concat(datasets, axis=1,
+        return (pd.concat(dfs, axis=1,
                           keys=cross_matches.columns.tolist())
                 .reorder_levels([1, 0], axis=1)
-                .reindex(columns=config['target_columns'], level=0)
+                .reindex(columns=CONFIG['target_columns'], level=0)
                 .reset_index(drop=True))
 
-    crossmatches = link_multiple_datasets(datasets, labels,
-                                          use_saved_matches=use_saved_matches,
-                                          config=config, **dukeargs)
-    return (combined_dataframe(crossmatches, datasets, config)
-            .reindex(columns=config['target_columns'], level=0))
+    crossmatches = link_multiple_datasets(dfs, use_saved_matches=use_saved_matches, **dukeargs)
 
+    return (combined_dataframe(crossmatches, dfs)
+            .reindex(columns=CONFIG['target_columns'], level=0))
 
-def reduce_matched_dataframe(df, show_orig_names=False, config=None):
+def reduce_matched_dataframe(df, show_orig_names=False):
     """
     Reduce a matched dataframe to a unique set of columns. For each entry
     take the value of the most reliable data source included in that match.
@@ -259,14 +220,11 @@ def reduce_matched_dataframe(df, show_orig_names=False, config=None):
     """
     df = get_obj_if_Acc(df)
 
-    if config is None:
-        config = get_config()
-
     # define which databases are present and get their reliability_score
     sources = df.columns.levels[1]
-    rel_scores = pd.Series({s: config[s]['reliability_score'] for s in sources})\
+    rel_scores = pd.Series({s: CONFIG[s]['reliability_score'] for s in sources})\
                    .sort_values(ascending=False)
-    cols = config['target_columns']
+    cols = CONFIG['target_columns']
     props_for_groups = {col: 'first'
                         for col in cols}
     props_for_groups.update({'YearCommisisoned': 'min',
@@ -285,4 +243,5 @@ def reduce_matched_dataframe(df, show_orig_names=False, config=None):
 
     if show_orig_names:
         sdf = sdf.assign(**dict(df.Name))
+
     return sdf.pipe(clean_technology).reset_index(drop=True)
