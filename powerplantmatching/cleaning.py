@@ -4,7 +4,7 @@ Functions for vertically cleaning a dataset.
 # from __future__ import absolute_import, print_function
 
 # from core import _get_config, _data_out, get_obj_if_Acc
-from core import _data_out, get_obj_if_Acc
+from core import _data_out
 
 from utils import get_name, set_column_name
 from duke import duke
@@ -28,7 +28,7 @@ def clean_powerplantname(df):
         dataframe to be cleaned
 
     """
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     df = df[df.Name.notnull()]
     name = df.Name.replace(regex=True, value=' ',
                            to_replace=['-', '/', ',', '\(', '\)', '\[', '\]',
@@ -249,7 +249,7 @@ def aggregate_units(df, dataset_name=None,
         want to have aggregated powerplants without running the
         aggregation algorithm again
     """
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
 
     if config is None:
         config = get_config()

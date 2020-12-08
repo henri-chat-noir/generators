@@ -17,7 +17,7 @@ from _globals import CONFIG
 from _globals import _package_data
 
 from utils import (parse_if_not_stored, fill_geoposition, correct_manually,
-                    config_filter, set_column_name)
+                    config_filter, set_column_name, convert_alpha2_to_country)
 from heuristics import scale_to_net_capacities
 from cleaning import (gather_fueltype_info, gather_set_info,
                        gather_technology_info, clean_powerplantname,
@@ -315,8 +315,12 @@ def JRC(raw=False, config=None, update=False):
                                     'HROR': 'Run-Of-River'}))
           .drop(columns=['pypsa_id', 'GEO'])
           .assign(Set='Store', Fueltype='Hydro')
-          .powerplant.convert_alpha2_to_country()
+          .pipe(convert_alpha2_to_country)
           .pipe(config_filter))
+
+            # .powerplant.convert_alpha2_to_country()
+
+
     # TODO: Temporary section to deal with duplicate identifiers in the JRC
     # input file. Can be removed again, once the duplicates have been removed
     # in a new release.
@@ -634,7 +638,7 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
                          'Wind Offshore': 'Offshore',
                          'Wind Onshore': 'Onshore'}, regex=True),
                     Capacity=lambda df: pd.to_numeric(df.Capacity))
-            .powerplant.convert_alpha2_to_country()
+            .pipe(convert_alpha2_to_country)
             .pipe(clean_powerplantname)
             .pipe(fill_geoposition, use_saved_locations=True, saved_only=True)
             .query('Capacity > 0')
@@ -646,6 +650,7 @@ def ENTSOE(update=False, raw=False, entsoe_token=None, config=None):
             .pipe(correct_manually, 'ENTSOE', config=CONFIG)
             )
 
+            # .powerplant.convert_alpha2_to_country()
 
 # def OSM():
 #    """

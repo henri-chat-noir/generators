@@ -1,10 +1,26 @@
+# -*- coding: utf-8 -*-
+# Copyright 2016-2018 Fabian Hofmann (FIAS), Jonas Hoersch (KIT, IAI) and
+# Fabian Gotzens (FZJ, IEK-STE)
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Utility functions for checking data completness and supporting other functions
 """
 
-# from core import _get_config, _data_in, _package_data, logger, get_obj_if_Acc
-from _globals import CONFIG, _package_data
-from core import _data_in, logger
+from __future__ import print_function, absolute_import
+
+from .core import _get_config, _data_in, _package_data, logger, get_obj_if_Acc
 
 import os
 import time
@@ -15,11 +31,11 @@ import numpy as np
 import multiprocessing
 from ast import literal_eval as liteval
 
+
 country_map = pd.read_csv(_package_data('country_codes.csv'))\
                 .replace({'name': {'Czechia': 'Czech Republic'}})
 
 def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
-
     """
     Returns a lookup table of the dataframe df with rounded numbers.
     Use different lookups as "Country", "Fueltype" for the different lookups.
@@ -38,7 +54,7 @@ def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
         list of fueltype to exclude from the analysis
     """
 
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
     if unit == 'GW':
         scaling = 1000.
     elif unit == 'MW':
@@ -65,8 +81,9 @@ def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
         return (lookup_single(df)/scaling).fillna(0.).round(3)
 
 def parse_if_not_stored(name, update=False, config=None, parse_func=None, **kwargs):
-    
-    df_config = CONFIG[name]
+    if config is None:
+        config = get_config()
+    df_config = config[name]
     path = _data_in(df_config['fn'])
 
     if not os.path.exists(path) or update:
@@ -81,7 +98,7 @@ def parse_if_not_stored(name, update=False, config=None, parse_func=None, **kwar
         data = pd.read_csv(path, **kwargs)
     return data
 
-def config_filter(df, name=None, config=CONFIG):
+def config_filter(df, name=None, config=None):
     """
     Convenience function to filter data source according to the config.yaml
     file. Individual query filters are applied if argument 'name' is given.
@@ -95,8 +112,10 @@ def config_filter(df, name=None, config=CONFIG):
     config : dict, default None
         Configuration overrides varying from the config.yaml file
     """
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
 
+    if config is None:
+        config = _get_config()
     # individual filter from config.yaml
     if name is not None:
         queries = {k: v for source in config['matching_sources']
@@ -158,7 +177,7 @@ def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None, **kwargs
         'Hydrogen Storage']
     """
     config = get_config() if config is None else config
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
 
     default = ['Bioenergy', 'Geothermal', 'Mixed fuel types',
                'Electro-mechanical', 'Hydrogen Storage']
@@ -172,7 +191,7 @@ def read_csv_if_string(df):
     """
     Convenience function to import powerplant data source if a string is given.
     """
-    import data
+    from . import data
     if isinstance(data, six.string_types):
         df = getattr(data, df)()
     return df
@@ -241,7 +260,7 @@ def select_by_projectID(df, projectID, dataset_name=None):
     """
     Convenience function to select data by its projectID
     """
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
 
     if isinstance(df.projectID.iloc[0], str):
         return df.query("projectID == @projectID")
@@ -266,8 +285,8 @@ def update_saved_matches_for_(name):
 
     Now the matched_data is updated with the modified version of ESE.
     """
-    from collection import collect
-    from matching import compare_two_datasets
+    from .collection import collect
+    from .matching import compare_two_datasets
     df = collect(name, use_saved_aggregation=False)
     dfs = [ds for ds in get_config()['matching_sources'] if ds != name]
     for to_match in dfs:
@@ -297,8 +316,10 @@ def parmap(f, arg_list, config=None):
     arg_list : list
         list of arguments mapped to f
     """
+    if config is None:
+        config = _get_config()
 
-    if CONFIG['parallel_duke_processes']:
+    if config['parallel_duke_processes']:
         nprocs = min(multiprocessing.cpu_count(), config['process_limit'])
         logger.info('Run process with {} parallel threads.'.format(nprocs))
         q_in = multiprocessing.Queue(1)
@@ -333,14 +354,14 @@ def country_alpha2(country):
         return ''
 
 def convert_alpha2_to_country(df):
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
     dic = {'EL': 'GR',  # needed, as some datasets use for Greece and United K.
            'UK': 'GB'}  # codes that are not conform to ISO 3166-1 alpha2.
     return df.assign(Country=df.Country.replace(dic)
                      .map(country_map.set_index('alpha_2')['name']))
 
 def convert_country_to_alpha2(df):
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
     alpha2 = df.Country.map(country_map.set_index('name')['alpha_2'])\
                .fillna(country_map.dropna(subset=['official_name'])
                        .set_index('official_name')['alpha_2'])
@@ -357,9 +378,9 @@ def breakdown_matches(df):
         Matched data with not empty projectID-column. Keys of projectID must
         be specified in powerplantmatching.data.data_config
     """
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
 
-    import data
+    from . import data
     assert('projectID' in df)
     if isinstance(df.projectID.iloc[0], list):
         sources = [df.powerplant.get_name()]
@@ -407,8 +428,8 @@ def restore_blocks(df, mode=2, config=None):
         Matched data with not empty projectID-column. Keys of projectID must
         be specified in powerplantmatching.data.data_config
     """
-    from data import OPSD
-    # df = get_obj_if_Acc(df)
+    from .data import OPSD
+    df = get_obj_if_Acc(df)
     assert('projectID' in df)
 
     config = get_config() if config is None else config
@@ -499,9 +520,9 @@ def fill_geoposition(df, use_saved_locations=False, saved_only=False):
         Whether to firstly compare with cached results in
         powerplantmatching/data/parsed_locations.csv
     """
-    # df = get_obj_if_Acc(df)
+    df = get_obj_if_Acc(df)
 
-    if use_saved_locations and CONFIG['google_api_key'] is None:
+    if use_saved_locations and _get_config()['google_api_key'] is None:
         logger.warning('Geoparsing not possible as no google api key was '
                        'found, please add the key to your config.yaml if you '
                        'want to enable it.')

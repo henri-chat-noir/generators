@@ -3,7 +3,7 @@ Functions to modify and adjust power plant datasets
 """
 
 # from core import _get_config, _package_data, get_obj_if_Acc
-from core import get_obj_if_Acc
+# from core import get_obj_if_Acc
 from utils import lookup, get_name
 
 import pandas as pd
@@ -35,7 +35,7 @@ def extend_by_non_matched(df, extend_by, label=None, query=None,
     """
     from . import data
     from .cleaning import aggregate_units
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
 
     if config is None:
         config = get_config()
@@ -96,7 +96,7 @@ def rescale_capacities_to_country_totals(df, fueltypes=None):
         fueltype that should be scaled
     """
     from .data import Capacity_stats
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     df = df.copy()
     if fueltypes is None:
         fueltypes = df.Fueltype.unique()
@@ -119,9 +119,10 @@ def rescale_capacities_to_country_totals(df, fueltypes=None):
 
 
 def fill_missing_duration(df):
-    df = get_obj_if_Acc(df)
+
+    # df = get_obj_if_Acc(df)
     mean_duration = df[df.Set == 'Store'].groupby('Fueltype').Duration.mean()
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     for store in mean_duration.index:
         df.loc[(df['Set'] == 'Store') & (df['Fueltype'] == store),
                'Duration'] = mean_duration.at[store]
@@ -145,7 +146,7 @@ def extend_by_VRE(df, config=None, base_year=2017, prune_beyond=True):
          Extended dataframe
     """
     from .data import OPSD_VRE
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     config = get_config() if config is None else config
 
     vre = OPSD_VRE(config=config).query('Fueltype != "Hydro"')\
@@ -197,7 +198,7 @@ def fill_missing_commyears(df):
     """
     Fills the empty commissioning years with averages.
     """
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     df = df.copy()
     # 1st try: Fill with both country- and fueltypespecific averages
     df.DateIn.fillna(df.groupby(['Country', 'Fueltype'])
@@ -227,7 +228,7 @@ def fill_missing_decommyears(df, config=None):
     per `Fueltype` given in the config and corresponding commissioning years.
     Note that the latter is filled up using `fill_missing_commyears`.
     """
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
     if config is None:
         config = get_config()
     if 'DateOut' not in df:
@@ -462,7 +463,8 @@ def gross_to_net_factors(reference='opsd', aggfunc='median',
 
 
 def scale_to_net_capacities(df, is_gross=True, catch_all=True):
-    df = get_obj_if_Acc(df)
+
+    # df = get_obj_if_Acc(df)
     if is_gross:
         factors = gross_to_net_factors()
         for ftype, tech in factors.index.values:

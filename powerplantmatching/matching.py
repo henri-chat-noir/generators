@@ -3,7 +3,7 @@ Functions for linking and combining different datasets
 """
 
 from _globals import CONFIG, DATASET_LABELS
-from core import _data_out, get_obj_if_Acc
+from core import _data_out
 
 from utils import parmap
 from duke import duke
@@ -70,7 +70,7 @@ def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_w
         # only append if country appears in both dataframse
         if all(sel.any() for sel in sel_country_b):
             return duke([df[sel] for df, sel in zip(df_pair, sel_country_b)],
-                        labels, **dukeargs)
+                        label_pair, **dukeargs)
         else:
             return pd.DataFrame()
 
@@ -218,7 +218,7 @@ def reduce_matched_dataframe(df, show_orig_names=False):
         MultiIndex dataframe with the matched powerplants, as obtained from
         combined_dataframe() or match_multiple_datasets()
     """
-    df = get_obj_if_Acc(df)
+    # df = get_obj_if_Acc(df)
 
     # define which databases are present and get their reliability_score
     sources = df.columns.levels[1]
