@@ -2,6 +2,9 @@ from os import path
 import pandas as pd
 import yaml
 
+TEST_DS = set()
+TEST_DS = {'ENTSOE'}
+
 def _package_data(filename):
         path_str = path.join(PACKAGE_CONFIG['repo_data_dir'], filename)
         return path_str
@@ -73,5 +76,3 @@ DATASET_LABELS.sort()
     
 COUNTRY_MAP = pd.read_csv(_package_data('country_codes.csv'))\
                 .replace({'name': {'Czechia': 'Czech Republic'}})
-
-

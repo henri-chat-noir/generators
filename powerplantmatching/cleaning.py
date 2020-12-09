@@ -249,13 +249,20 @@ def aggregate_units(df, dataset_name=None,
         want to have aggregated powerplants without running the
         aggregation algorithm again
     """
-    # df = get_obj_if_Acc(df)
-
-    if config is None:
-        config = get_config()
+    
+    try:
+        ds_name = df.name
+    except:
+        no_name = True
+        ds_name = None
 
     weighted_cols = [col for col in ['Efficiency', 'Duration']
                      if col in config['target_columns']]
+
+    columns = df.columns
+    # print(columns)
+    stop = True
+
     df = (df.assign(**{col: df[col] * df.Capacity for col in weighted_cols})
             .assign(lat=df.lat.astype(float),
                     lon=df.lon.astype(float))
@@ -338,4 +345,5 @@ def aggregate_units(df, dataset_name=None,
           .pipe(clean_powerplantname)
           .reindex(columns=config['target_columns'])
           .pipe(set_column_name, dataset_name))
+
     return df

@@ -5,11 +5,11 @@ opsd_vres_base_year: 2016
 
 #matching config
 matching_sources:
-    - CARMA
+    # - CARMA
     - ENTSOE
-    - GEO
+    # - GEO
     # - GPD
-    - JRC
+    # - JRC
     # - OPSD
     # - ESE
     # - IWPDCY
