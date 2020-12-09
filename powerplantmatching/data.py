@@ -644,11 +644,13 @@ def ENTSOE_ORIG(df=None, update=False, raw=False, entsoe_token=None, config=None
 
 def ENTSOE(in_df=None, update=False, raw=False, entsoe_token=None, config=None):
     
+    # countries = CONFIG['target_countries'] -- seems not to be used in this function
 
     # Copy just to ensure can compare with original for debugging
     out_df = in_df.copy()
 
-    # 1. Column renaming to ensure existing data aligns with names in standard 'target columns'
+    # 1. Column renaming to ensure existing data, that needs to,
+    #    aligns with names in standard 'target columns' (see next)
     out_df = out_df.rename(columns={'psrType': 'Fueltype',
                                'quantity': 'Capacity',
                                'registeredResource.mRID': 'projectID',
@@ -672,11 +674,15 @@ def ENTSOE(in_df=None, update=False, raw=False, entsoe_token=None, config=None):
     fuelmap = entsoe_api.mappings.PSRTYPE_MAPPINGS
     out_df = out_df.replace( {'Fueltype': fuelmap} )
 
-    # 5.  Value assignments to standard colunms, EIC, Country, Name, and Fueltype, Capacity
+    # 5.  Value assignments to five (5) standard colunms: EIC, Country, Name, and Fueltype, Capacity
     #     For Capacity, type conversion to numeric
+    #     Question on what to do with Capacity <= 0 -- currently dropped via .query > 0
 
-    country_map_entsoe = pd.read_csv(_package_data('entsoe_country_codes.csv'),
-                                     index_col=0).rename(index=str).Country
+    # First 2 characters of projectID (originally revisteredResource) are 2-digit number linked to country
+    # This then is mapped to alpha_2 country codes in entsoe-specifc csv
+    # God only knows where this was derived from -- manually by code developers / inspection?
+    country_map_entsoe = pd.read_csv(_package_data('entsoe_country_codes.csv'), index_col=0)
+    country_map_entsoe = country_map_entsoe.rename(index=str).Country
 
     fueltype_rename_entsoe = {'Fossil Hard coal': 'Hard Coal',
                          'Fossil Coal-derived gas': 'Other',
@@ -696,19 +702,26 @@ def ENTSOE(in_df=None, update=False, raw=False, entsoe_token=None, config=None):
     out_df.Fueltype = out_df.Fueltype.replace(fueltype_rename_entsoe, regex=True)
     out_df.Capacity = pd.to_numeric(out_df.Capacity)
 
-    countries = CONFIG['target_countries']
+    # 6. Row filtering, e.g. dropping / assessing Capacity == 0
+    cap_zero_rows = out_df[out_df.Capacity == 0]
+    print(cap_zero_rows)
+    cap_neg_rows = out_df[out_df.Capacity < 0]
+    print(cap_neg_rows)
+    out_df = out_df.query('Capacity > 0')
 
-    return (out_df.pipe(convert_alpha2_to_country)
-            .pipe(clean_powerplantname)
-            .pipe(fill_geoposition, use_saved_locations=True, saved_only=True)
-            .query('Capacity > 0')
-            .pipe(gather_technology_info, config=config)
-            .pipe(gather_set_info)
-            .pipe(clean_technology)
-            .pipe(set_column_name, 'ENTSOE')
-            .pipe(config_filter, name='ENTSOE', config=config)
-            .pipe(correct_manually, 'ENTSOE', config=config)
+    # 7. Cleaning function pipes
+    out_df = (out_df.pipe(convert_alpha2_to_country)
+                .pipe(clean_powerplantname)
+                .pipe(fill_geoposition, use_saved_locations=True, saved_only=True)
+                .pipe(gather_technology_info, config=config)
+                .pipe(gather_set_info)
+                .pipe(clean_technology)
+                .pipe(set_column_name, 'ENTSOE')
+                .pipe(config_filter, name='ENTSOE', config=config)
+                .pipe(correct_manually, 'ENTSOE', config=config)
             )
+    
+    return out_df
 
 # def OSM():
 #    """
