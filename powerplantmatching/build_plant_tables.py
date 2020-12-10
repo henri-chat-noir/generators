@@ -8,7 +8,7 @@ from core import _data_out
 from utils import set_uncommon_fueltypes_to_other, projectID_to_dict, set_column_name, get_name
 
 from heuristics import extend_by_non_matched, extend_by_VRE
-import matching
+import match
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,9 @@ def build_plant_df_alldata(dfs, custom_config={}, **dukeargs):
     **dukeargs : keyword-args for duke
     """
 
-    plants_alldata_df = matching.combine_multiple_datasets( dfs, use_saved_matches=True, **dukeargs)
+    plants_alldata_df = match.combine_multiple_datasets( dfs, use_saved_matches=True, **dukeargs)
     
+    # This type set should already be part of tidying / normalization, note at this stage
     plants_alldata_df.assign( projectID=lambda df: df.projectID.astype(str) )
     
     datasets_filetag = '_'.join(DATASET_LABELS)
@@ -54,7 +55,7 @@ def build_plant_df_reduced(plants_alldata_df):
 
     # logger.info('Collect combined dataset for {}'.format(', '.join(datasets)))
     
-    plants_reduced_df = matching.reduce_matched_dataframe(plants_alldata_df)
+    plants_reduced_df = match.reduce_matched_dataframe(plants_alldata_df)
     plants_reduced_df.to_csv(outfn_reduced, index_label='id')
 
     return plants_reduced_df

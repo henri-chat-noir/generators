@@ -4,7 +4,7 @@ import logging
 from _globals import CONFIG, DATASET_LABELS, TEST_DS
 from core import _data_in, _data_out
 from utils import parmap
-from cleaning import aggregate_units
+from augment import aggregate_units
 
 import data
 logger = logging.getLogger(__name__)

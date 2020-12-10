@@ -11,15 +11,12 @@ import pycountry
 import logging
 
 import entsoe as entsoe_api
-from _globals import CONFIG
-
-# from core import _get_config, _package_data, _data_in, package_config
-from _globals import _package_data
+from _globals import CONFIG, _package_data
 
 from utils import (parse_if_not_stored, fill_geoposition, correct_manually,
                     config_filter, set_column_name, convert_alpha2_to_country)
 from heuristics import scale_to_net_capacities
-from cleaning import (gather_fueltype_info, gather_set_info,
+from cleaning_functions import (gather_fueltype_info, gather_set_info,
                        gather_technology_info, clean_powerplantname,
                        clean_technology)
 

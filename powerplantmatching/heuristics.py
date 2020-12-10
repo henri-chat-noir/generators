@@ -78,7 +78,6 @@ def extend_by_non_matched(df, extend_by, label=None, query=None,
         return df.append(extend_by.reindex(columns=df.columns),
                          ignore_index=True)
 
-
 def rescale_capacities_to_country_totals(df, fueltypes=None):
     """
     Returns a extra column 'Scaled Capacity' with an up or down scaled capacity
@@ -117,7 +116,6 @@ def rescale_capacities_to_country_totals(df, fueltypes=None):
                    'Scaled Capacity'] *= ratio.loc[fueltype, country]
     return df
 
-
 def fill_missing_duration(df):
 
     # df = get_obj_if_Acc(df)
@@ -127,7 +125,6 @@ def fill_missing_duration(df):
         df.loc[(df['Set'] == 'Store') & (df['Fueltype'] == store),
                'Duration'] = mean_duration.at[store]
     return df
-
 
 def extend_by_VRE(df, config=None, base_year=2017, prune_beyond=True):
     """
@@ -220,7 +217,6 @@ def fill_missing_commyears(df):
     df.DateRetrofit.fillna(df.DateIn.astype(int), inplace=True)
     return df
 
-
 def fill_missing_decommyears(df, config=None):
     """
     Function which sets/fills a column 'DateOut' with roughly
@@ -238,7 +234,6 @@ def fill_missing_decommyears(df, config=None):
     df['DateOut'] = (df.DateOut.fillna(df[['DateIn', 'DateRetrofit']].max(1)
                                          + lifetime).astype(int))
     return df
-
 
 def aggregate_VRE_by_commyear(df, target_fueltypes=None, agg_geo_by=None):
     """
@@ -282,7 +277,6 @@ def aggregate_VRE_by_commyear(df, target_fueltypes=None, agg_geo_by=None):
     df.columns = df.columns.droplevel(level=1)
     return df.assign(Set='PP',
                      DateRetrofit=df.DateIn)
-
 
 def derive_vintage_cohorts_from_statistics(df, base_year=2015, config=None):
     """
@@ -377,7 +371,6 @@ def derive_vintage_cohorts_from_statistics(df, base_year=2015, config=None):
     dfe = dfe.assign(DateRetrofit=dfe.DateIn)
     return dfe[~np.isclose(dfe.Capacity, 0)]
 
-
 def set_denmark_region_id(df):
     """
     Used to set the Region column to DKE/DKW (East/West) for electricity models
@@ -416,7 +409,6 @@ def set_denmark_region_id(df):
     df = pd.concat([df, dk_o], ignore_index=True)
     return df
 
-
 def remove_oversea_areas(df, lat=[36, 72], lon=[-10.6, 31]):
     """
     Remove plants outside continental Europe such as the Canarian Islands etc.
@@ -426,12 +418,11 @@ def remove_oversea_areas(df, lat=[36, 72], lon=[-10.6, 31]):
                  (df.lon >= lon[0]) & (df.lon <= lon[1]))]
     return df
 
-
 def gross_to_net_factors(reference='opsd', aggfunc='median',
                          return_entire_data=False):
     """
     """
-    from cleaning import clean_technology
+    from cleaning_functions import clean_technology
     if reference == 'opsd':
         from data import OPSD
         reference = OPSD(rawDE=True)
@@ -461,7 +452,6 @@ def gross_to_net_factors(reference='opsd', aggfunc='median',
                              'Technology']).ratio.mean()
         return ratios
 
-
 def scale_to_net_capacities(df, is_gross=True, catch_all=True):
 
     # df = get_obj_if_Acc(df)
@@ -479,10 +469,8 @@ def scale_to_net_capacities(df, is_gross=True, catch_all=True):
     else:
         return df
 
-
 def PLZ_to_LatLon_map():
     return pd.read_csv(_package_data('PLZ_Coords_map.csv'), index_col='PLZ')
-
 
 def set_known_retire_years(df):
     """

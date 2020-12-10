@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\powerplantmatching",
-    "\\powerplantmatching\\unused_modules"
+    "\\powerplantmatching"
   ],
-  "SelectedNode": "\\powerplantmatching\\cleaning.py",
+  "SelectedNode": "\\powerplantmatching\\cleaning_functions.py",
   "PreviewInSolutionExplorer": false
 }

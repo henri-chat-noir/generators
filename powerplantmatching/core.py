@@ -16,16 +16,6 @@ def _data_out(filename):
     path_str = path.join(PACKAGE_CONFIG['data_dir'], DATA_SUB_OUT, 'default', filename)
     return path_str
 
-"""
-def get_obj_if_Acc(obj):
-
-    from accessor import PowerPlantAccessor
-
-    if isinstance(obj, PowerPlantAccessor):
-        return obj._obj
-    else:
-        return obj
-"""
 
 # INITIALIZATION CODE
 # ===================

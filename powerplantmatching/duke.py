@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import, print_function
 import logging
 import os
 import subprocess as sub
@@ -23,8 +22,8 @@ import tempfile
 import pandas as pd
 import numpy as np
 from _globals import _package_data
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 def add_geoposition_for_duke(df):
     """

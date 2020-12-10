@@ -2,19 +2,21 @@
 Functions for linking and combining different datasets
 """
 
-from _globals import CONFIG, DATASET_LABELS
-from core import _data_out
-
-from utils import parmap
-from duke import duke
-from cleaning import clean_technology
-
 import os.path
 import pandas as pd
 import numpy as np
 from itertools import combinations
 import logging
+
+from _globals import CONFIG, DATASET_LABELS
+from core import _data_out
+
+from utils import parmap
+from duke import duke
+from cleaning_functions import clean_technology
+
 logger = logging.getLogger(__name__)
+
 
 def best_matches(links):
     """
