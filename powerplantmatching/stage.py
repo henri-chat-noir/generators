@@ -1,8 +1,7 @@
 import pandas as pd
 import logging
 
-from _globals import CONFIG, DATASET_LABELS, TEST_DS
-from core import _data_in, _data_out
+from _globals import _set_path, CONFIG, DATASET_LABELS, NEW_ROUTE, SUB_LAND, SUB_CLEAN, SUB_TAG, SUB_GROUP
 from utils import parmap
 from augment import aggregate_units
 
@@ -14,21 +13,22 @@ def load_dataframes():
     def load_df(ds_name):
   
         ds_config = CONFIG[ds_name]
-        if ds_name in TEST_DS:
-            ds_spec = _data_in(ds_config['fn'])
+        if ds_name in NEW_ROUTE:
+            ds_spec = _set_path(ds_config['fn'], SUB_LAND)
             df = pd.read_csv(ds_spec)
-        
+            df.columns.name = ds_name        
+
         else:
             df = None
             get_df = getattr(data, ds_name)
-            df = get_df(df=df, config=CONFIG, **ds_config.get('read_kwargs', {}))
-            print(df.columns)
-            if not ds_config.get('aggregated_units', False):
-                df = aggregate_units(df, use_saved_aggregation=True, dataset_name=ds_name, config=CONFIG)
-            else:
-                df = df.assign(projectID=df.projectID.map(lambda x: [x]))
+            df = get_df(df=df, **ds_config.get('read_kwargs', {}))
+            df.columns.name = ds_name
 
-        df.name = ds_name
+            if ds_config.get('aggregated_units', False):
+                df = df.assign(projectID=df.projectID.map(lambda x: [x]))
+            else:
+                df = aggregate_units(df, ds_name=ds_name, use_saved_dukemap=True)
+            
         return df
 
     dfs = []
@@ -36,38 +36,47 @@ def load_dataframes():
     for ds_name in DATASET_LABELS:
         logger.info(f"Loading csv to form dataframe {ds_name}")
         df = load_df(ds_name)
+        print(df.columns.name)
         dfs.append(df)
 
     return dfs
 
-def tidy_dataframes(in_dfs):
+def clean_dataframes(in_dfs):
 
     out_dfs = []
     for df in in_dfs:
-        
-        try:
-            ds_name = df.name
-        except:
-            ds_name = None
-        
-        if ds_name in TEST_DS:
+        ds_name = df.columns.name
+        if ds_name in NEW_ROUTE:
             ds_config = CONFIG[ds_name]
-            get_df = getattr(data, ds_name)
-            stop = True
-            df = get_df(in_df=df, config=CONFIG, **ds_config.get('read_kwargs', {}))
-            print(df.columns)
-            stop = True
-            if not ds_config.get('aggregated_units', False):
-                df = aggregate_units(df, use_saved_aggregation=True, dataset_name=ds_name, config=CONFIG)
-            else:
-                df = df.assign(projectID=df.projectID.map(lambda x: [x]))
+            clean_df_func = getattr(data, ds_name)
+            df = clean_df_func(in_df=df, **ds_config.get('read_kwargs', {}))
+
+            file_spec = _set_path(f"{ds_name}_clean.csv", SUB_CLEAN)
+            df.to_csv(file_spec, header=True)          
+
+        file_spec = _set_path(f"{ds_name}_clean.csv", SUB_CLEAN)
+        df.to_csv(file_spec, header=True)          
 
         out_dfs.append(df)
 
     return out_dfs
 
+def group_units(in_dfs):
 
-def consolidate_dataframes():
+    out_dfs = []
+    for df in in_dfs:
+        ds_name = df.columns.name
+    
+        if ds_name in NEW_ROUTE:
+            ds_config = CONFIG[ds_name]
+            if ds_config.get('aggregated_units', False):
+                df = df.assign(projectID=df.projectID.map(lambda x: [x]))
+            else:
+                df = aggregate_units(df, use_saved_dukemap=True, ds_name=ds_name)
 
-    pass
-    return
+        file_spec = _set_path(f"{ds_name}_grouped.csv", SUB_GROUP)
+        df.to_csv(file_spec, header=True)          
+
+        out_dfs.append(df)
+
+    return out_dfs

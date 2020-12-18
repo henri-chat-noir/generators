@@ -5,7 +5,8 @@ import stage
 # df = df.pipe(projectID_to_dict)
 
 dfs = stage.load_dataframes()
-dfs = stage.tidy_dataframes(dfs)
+dfs = stage.clean_dataframes(dfs)
+dfs = stage.group_units(dfs)
 
 plant_df = plants.build_plant_df_alldata(dfs)
 plant_df = plants.build_plant_df_reduced(plant_df)

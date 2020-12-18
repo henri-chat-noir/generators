@@ -8,11 +8,11 @@ import numpy as np
 from itertools import combinations
 import logging
 
-from _globals import CONFIG, DATASET_LABELS
-from core import _data_out
+from _globals import CONFIG, DATASET_LABELS, SUB_LINK
+from core import _set_path
 
 from utils import parmap
-from duke import duke
+from duke import duke_link
 from cleaning_functions import clean_technology
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,11 @@ def best_matches(links):
         Links as returned by duke
     """
     labels = links.columns.difference({'scores'})
-    return (links
-            .groupby(links.iloc[:, 1], as_index=False, sort=False)
-            .apply(lambda x: x.loc[x.scores.idxmax(), labels]))
+
+    links = links.groupby(links.iloc[:, 1], as_index=False, sort=False)
+    links = links.apply(lambda x: x.loc[x.scores.idxmax(), labels])
+
+    return links
 
 def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_wise=True, **dukeargs):
     """
@@ -56,31 +58,45 @@ def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_w
     if not ('singlematch' in dukeargs):
         dukeargs['singlematch'] = True
 
-    saving_path = _data_out('matches/matches_{}_{}.csv'.format(*np.sort(label_pair)))
+    pair = np.sort(label_pair)
+
+    pair_match_spec = f"matches_{pair[0]}_{pair[1]}.csv"
+    saving_path = _set_path(pair_match_spec, SUB_LINK)
     if use_saved_matches:
         if os.path.exists(saving_path):
-            logger.info('Reading saved matches for df_pair {} and {}'
-                        .format(*label_pair))
+            logger.info(f"Reading saved matches for df_pair {pair[0]} and {pair[1]}")
             return pd.read_csv(saving_path, index_col=0)
+
         else:
-            logger.warning("Non-existing saved matches for dataset '{}', '{}'"
-                           " continuing by matching again".format(*label_pair))
+            logger.warning(f"Non-existing saved matches for dataset {pair[0]}, {pair[1]}."
+                           "continuing by matching again . . .")
 
     def country_link(df_pair, country):
+
         # country_selector for both dataframes
         sel_country_b = [df['Country'] == country for df in df_pair]
+
         # only append if country appears in both dataframse
         if all(sel.any() for sel in sel_country_b):
-            return duke([df[sel] for df, sel in zip(df_pair, sel_country_b)],
-                        label_pair, **dukeargs)
+            datasets = [ df[sel] for df, sel in zip(df_pair, sel_country_b)]
+            out_df = duke_link(datasets[0], datasets[1], country=country, **dukeargs)
+
         else:
-            return pd.DataFrame()
+            out_df = pd.DataFrame()
+
+        return out_df
 
     if country_wise:
         countries = CONFIG['target_countries']
-        links = pd.concat([country_link(df_pair, c) for c in countries])
+        links = pd.DataFrame()
+
+        # links = pd.concat([country_link(dfs, c) for c in countries])
+        for country in countries:
+            df = country_link(df_pair, country)
+            links = links.append(df)
+
     else:
-        links = duke(df_pair, labels=label_pair, **dukeargs)
+        links = duke_link(df_pair, labels=label_pair, **dukeargs)
 
     matches = best_matches(links)
     matches.to_csv(saving_path)
@@ -153,7 +169,9 @@ def link_multiple_datasets(datasets, use_saved_matches=True, **dukeargs):
 
         return compare_two_datasets(dfs_lbs[:2], dfs_lbs[2:], use_saved_matches=use_saved_matches, **dukeargs)
     
-    combs = list(combinations(range(len(DATASET_LABELS)), 2)) # Returns list of tuples (0, 1), (0, 2), etc.
+    # Returns list of tuples (0, 1), (0, 2), etc.
+    combs = list(combinations(range(len(DATASET_LABELS)), 2)) 
+
     mapargs = [[datasets[c], datasets[d], DATASET_LABELS[c], DATASET_LABELS[d]] for c, d in combs]
     all_matches = parmap(comp_dfs, mapargs)
 

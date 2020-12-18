@@ -8,7 +8,7 @@ import pandas as pd
 import networkx as nx
 import logging
 
-from core import _data_out
+from _globals import CONFIG
 from utils import get_name, set_column_name
 
 logger = logging.getLogger(__name__)
@@ -97,33 +97,6 @@ def clean_technology(df, generalize_hydros=False):
     tech = tech.replace({'Ccgt': 'CCGT', 'Ocgt': 'OCGT'}, regex=True)
     return df.assign(Technology=tech)
 
-def cliques(df, dataduplicates):
-    """
-    Locate cliques of units which are determined to belong to the same
-    powerplant.  Return the same dataframe with an additional column
-    "grouped" which indicates the group that the powerplant is
-    belonging to.
-
-    Parameters
-    ----------
-    df : pandas.Dataframe or string
-        dataframe or csv-file which should be analysed
-    dataduplicates : pandas.Dataframe or string
-        dataframe or name of the csv-linkfile which determines the
-        link within one dataset
-    """
-#    df = read_csv_if_string(df)
-    G = nx.DiGraph()
-    G.add_nodes_from(df.index)
-    G.add_edges_from((r.one, r.two) for r in dataduplicates.itertuples())
-    H = G.to_undirected(reciprocal=True)
-
-    grouped = pd.Series(np.nan, index=df.index)
-    for i, inds in enumerate(nx.algorithms.clique.find_cliques(H)):
-        grouped.loc[inds] = i
-
-    return df.assign(grouped=grouped)
-
 def gather_fueltype_info(df, search_col=['Name', 'Technology']):
     """
     Parses in search_col columns for distinct coal specifications, e.g.
@@ -180,7 +153,7 @@ def gather_set_info(df, search_col=['Name', 'Fueltype', 'Technology']):
     df.loc[:, 'Set'].fillna('PP', inplace=True)
     return df
 
-def gather_technology_info(df, search_col=['Name', 'Fueltype'], config=None):
+def gather_technology_info(df, search_col=['Name', 'Fueltype']):
     """
     Parses in search_col columns for distinct technology specifications, e.g.
     'Run-of-River', and passes this information to the 'Technology' column.
@@ -195,14 +168,12 @@ def gather_technology_info(df, search_col=['Name', 'Fueltype'], config=None):
         defaults to powerplantmatching.config.get_config()
 
     """
-    if config is None:
-        config = get_config()
-
+    
     technology = (df['Technology'].dropna()
                   if 'Technology' in df
                   else pd.Series())
 
-    pattern = '|'.join(('(?i)'+x) for x in config['target_technologies'])
+    pattern = '|'.join(('(?i)'+x) for x in CONFIG['target_technologies'])
     for i in search_col:
         found = (df[i].dropna()
                  .str.findall(pattern)

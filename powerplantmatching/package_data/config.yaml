@@ -10,13 +10,13 @@ matching_sources:
     - GEO
     # - GPD
     - JRC
-    # - OPSD
+    - OPSD
     # - ESE
     # - IWPDCY
     # - WEPP
 
 fully_included_sources:
-    # - OPSD: Country not in ['Switzerland']
+    - OPSD: Country not in ['Switzerland']
     - JRC: Country not in ['Switzerland']
     - ENTSOE: Country not in ['Spain', 'Switzerland', 'United Kingdom']
     - CARMA: Country == 'France' and Fueltype == 'Hydro'

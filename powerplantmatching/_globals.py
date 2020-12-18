@@ -2,8 +2,7 @@ from os import path
 import pandas as pd
 import yaml
 
-TEST_DS = set()
-TEST_DS = {'ENTSOE'}
+NEW_ROUTE = {'ENTSOE', 'GEO'}
 
 def _package_data(filename):
         path_str = path.join(PACKAGE_CONFIG['repo_data_dir'], filename)
@@ -51,14 +50,28 @@ def _get_config(filename=None, **overrides):
 
     return config
 
+def _set_path(filename, sub_dir=None):
+
+    if sub_dir is None:
+        path_str = path.join(PACKAGE_CONFIG['data_dir'], filename) 
+    else:
+        path_str = path.join(PACKAGE_CONFIG['data_dir'], sub_dir, filename) 
+
+    return path_str
+
 # Set-up dictionary for folder locations
 ppm_data_dir = r"C:\Google Drive\0 MVR_Platform_Data\ppm_data"
 
 repo_data_dir = path.join(path.dirname(__file__), 'package_data')
 
-DATA_SUB_IN = 'landing'
-DATA_SUB_WORK = 'working'
-DATA_SUB_OUT = 'output'
+SUB_LAND = '01_landing'
+SUB_CLEAN = '02_cleaned'
+SUB_TAG = '03_tag_cliques'
+SUB_MERGE = '04_merged'
+# Placeholder for dealing with cross-table UNIT, rather than plant, matching / linking
+SUB_GROUP = '06_grouped'
+SUB_LINK = '08_linked'
+SUB_OUT = '09_output'
 
 PACKAGE_CONFIG = {'repo_data_dir': repo_data_dir,
                   'custom_config': path.join(repo_data_dir, '.powerplantmatching_config.yaml'),

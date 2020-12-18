@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\powerplantmatching"
+    "\\powerplantmatching",
+    "\\powerplantmatching\\unused_modules"
   ],
-  "SelectedNode": "\\powerplantmatching\\stage.py",
+  "SelectedNode": "\\powerplantmatching\\unused_modules\\duke_ORIG.py",
   "PreviewInSolutionExplorer": false
 }

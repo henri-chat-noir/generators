@@ -2,8 +2,8 @@ import os
 import logging
 import pandas as pd
 
-from _globals import CONFIG, DATASET_LABELS
-from core import _data_out
+from _globals import CONFIG, DATASET_LABELS, SUB_OUT
+from core import _set_path
 
 from utils import set_uncommon_fueltypes_to_other, projectID_to_dict, set_column_name, get_name
 
@@ -43,7 +43,7 @@ def build_plant_df_alldata(dfs, custom_config={}, **dukeargs):
     plants_alldata_df.assign( projectID=lambda df: df.projectID.astype(str) )
     
     datasets_filetag = '_'.join(DATASET_LABELS)
-    outfn_alldata = _data_out(f'plants_list-ALLDATA_{datasets_filetag}.csv')
+    outfn_alldata = _set_path(f'plants_list-ALLDATA_{datasets_filetag}.csv', SUB_OUT)
     plants_alldata_df.to_csv(outfn_alldata, index_label='id')
 
     return plants_alldata_df
@@ -51,7 +51,7 @@ def build_plant_df_alldata(dfs, custom_config={}, **dukeargs):
 def build_plant_df_reduced(plants_alldata_df):
 
     data_set_str = '_'.join(DATASET_LABELS)
-    outfn_reduced = _data_out(f'plants_list_{data_set_str}.csv')
+    outfn_reduced = _set_path(f'plants_list_{data_set_str}.csv', SUB_OUT)
 
     # logger.info('Collect combined dataset for {}'.format(', '.join(datasets)))
     

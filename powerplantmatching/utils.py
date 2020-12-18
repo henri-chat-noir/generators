@@ -5,10 +5,10 @@ Utility functions for checking data completness and supporting other functions
 import os
 import pandas as pd
 
-from _globals import CONFIG, COUNTRY_MAP, _package_data
-from core import _data_in, logger
+from _globals import _set_path, CONFIG, COUNTRY_MAP, _package_data, SUB_LAND
+from core import logger
 
-def config_filter(df, name=None, config=CONFIG):
+def config_filter(df, name=None):
     """
     Convenience function to filter data source according to the config.yaml
     file. Individual query filters are applied if argument 'name' is given.
@@ -26,15 +26,15 @@ def config_filter(df, name=None, config=CONFIG):
 
     # individual filter from config.yaml
     if name is not None:
-        queries = {k: v for source in config['matching_sources']
+        queries = {k: v for source in CONFIG['matching_sources']
                    for k, v in to_dict_if_string(source).items()}
         if name in queries and queries[name] is not None:
             df = df.query(queries[name])
-    countries = config['target_countries']
-    fueltypes = config['target_fueltypes']
+    countries = CONFIG['target_countries']
+    fueltypes = CONFIG['target_fueltypes']
     
     return (df.query("Country in @countries and Fueltype in @fueltypes")
-            .reindex(columns=config['target_columns'])
+            .reindex(columns=CONFIG['target_columns'])
             .reset_index(drop=True))
 
 def convert_alpha2_to_country(df):
@@ -44,7 +44,7 @@ def convert_alpha2_to_country(df):
     return df.assign(Country=df.Country.replace(dic)
                      .map(COUNTRY_MAP.set_index('alpha_2')['name']))
 
-def correct_manually(df, name, config=None):
+def correct_manually(df, name):
     """
     Update powerplant data based on stored corrections in
     powerplantmatching/data/in/manual_corrections.csv. Specify the name
@@ -57,9 +57,7 @@ def correct_manually(df, name, config=None):
     name : str
         Name of the data source, should be in columns of manual_corrections.csv
     """
-    if config is None:
-        config = get_config()
-
+    
     corrections_fn = _package_data('manual_corrections.csv')
     corrections = pd.read_csv(corrections_fn)
 
@@ -70,7 +68,7 @@ def correct_manually(df, name, config=None):
 
     df = df.set_index('projectID').copy()
     df.update(corrections)
-    return df.reset_index().reindex(columns=config['target_columns'])
+    return df.reset_index().reindex(columns=CONFIG['target_columns'])
 
 def fill_geoposition(df, use_saved_locations=False, saved_only=False):
     """
@@ -171,7 +169,7 @@ def lookup(df, keys=None, by='Country, Fueltype', exclude=None, unit='MW'):
     else:
         return (lookup_single(df)/scaling).fillna(0.).round(3)
 
-def parmap(f, arg_list, config=None):
+def parmap(f, arg_list):
     """
     Parallel mapping function. Use this function to parallely map function
     f onto arguments in arg_list. The maximum number of parallel threads is
@@ -187,7 +185,7 @@ def parmap(f, arg_list, config=None):
     """
 
     if CONFIG['parallel_duke_processes']:
-        nprocs = min(multiprocessing.cpu_count(), config['process_limit'])
+        nprocs = min(multiprocessing.cpu_count(), CONFIG['process_limit'])
         logger.info('Run process with {} parallel threads.'.format(nprocs))
         q_in = multiprocessing.Queue(1)
         q_out = multiprocessing.Queue()
@@ -240,7 +238,7 @@ def parse_Geoposition(location, zipcode='', country='', use_saved_locations=Fals
 
     alpha2 = country_alpha2(country)
     try:
-        gdata = (GoogleV3(api_key=get_config()['google_api_key'], timeout=10)
+        gdata = (GoogleV3(api_key=CONFIG['google_api_key'], timeout=10)
                  .geocode(query=location,
                           components={'country': alpha2,
                                       'postal_code': str(zipcode)},
@@ -252,10 +250,10 @@ def parse_Geoposition(location, zipcode='', country='', use_saved_locations=Fals
         return pd.Series({'Name': location, 'Country': country,
                           'lat': gdata.latitude, 'lon': gdata.longitude})
 
-def parse_if_not_stored(name, update=False, config=None, parse_func=None, **kwargs):
+def parse_if_not_stored(name, update=False, parse_func=None, **kwargs):
     
     df_config = CONFIG[name]
-    path = _data_in(df_config['fn'])
+    path = _set_path(df_config['fn'], SUB_LAND)
 
     if not os.path.exists(path) or update:
         if parse_func is None:
@@ -296,7 +294,7 @@ def set_column_name(df, name):
     df.columns.name = name
     return df
 
-def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None, **kwargs):
+def set_uncommon_fueltypes_to_other(df, fillna_other=True, **kwargs):
    
     """
     Replace uncommon fueltype specifications as by 'Other'. This helps to
@@ -315,9 +313,6 @@ def set_uncommon_fueltypes_to_other(df, fillna_other=True, config=None, **kwargs
         ['Bioenergy', 'Geothermal', 'Mixed fuel types', 'Electro-mechanical',
         'Hydrogen Storage']
     """
-    config = get_config() if config is None else config
-    # df = get_obj_if_Acc(df)
-
     default = ['Bioenergy', 'Geothermal', 'Mixed fuel types',
                'Electro-mechanical', 'Hydrogen Storage']
     fueltypes = kwargs.get('fueltypes', default)
