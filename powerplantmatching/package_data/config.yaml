@@ -7,23 +7,25 @@ opsd_vres_base_year: 2016
 matching_sources:
     - CARMA
     - ENTSOE
-    - GEO
-    # - GPD
-    - JRC
-    - OPSD
     # - ESE
-    # - IWPDCY
+    - GEO
+    - GPD
+    - JRC
+    - OPSD_DE
+    - OPSD_EU
+    # - OSM (open street map powerplants)
     # - WEPP
+    # - BNETZA??
 
 fully_included_sources:
-    - OPSD: Country not in ['Switzerland']
+    - OPSD_DE: Country not in ['Switzerland']
+    - OPSD_EU: Country not in ['Switzerland']
     - JRC: Country not in ['Switzerland']
     - ENTSOE: Country not in ['Spain', 'Switzerland', 'United Kingdom']
     - CARMA: Country == 'France' and Fueltype == 'Hydro'
     - GEO: Country == 'Czech Republic' and Fueltype == 'Lignite'
-    # ESE: Country not in ['Switzerland']
-    # IWPDCY: lat == lat and Country == 'Sweden'
-
+    - ESE: Country not in ['Switzerland']
+    
 parallel_duke_processes: false
 process_limit: 2
 remove_missing_coords: true
@@ -47,7 +49,7 @@ ENTSOE:
   fn: entsoe_powerplants.csv
 ESE:
   reliability_score: 6
-  fn: projects.csv
+  fn: GESDB_Projects_11_17_2020.csv
   url: http://energystorageexchange.org/data/projects.csv?q=all #not openly available
 JRC:
   reliability_score: 6
@@ -68,10 +70,6 @@ GPD:
   fn: global_power_plant_database.csv
   #if outdated, look at http://datasets.wri.org/dataset/globalpowerplantdatabase
   url: http://datasets.wri.org/dataset/540dcf46-f287-47ac-985d-269b04bea4c6/resource/c240ed2e-1190-4d7e-b1da-c66b72e08858/download/globalpowerplantdatabasev120
-IWPDCY:
-  aggregated_units: true
-  reliability_score: 3
-  fn: IWPDCY.csv
 OPSD_DE:
   reliability_score: 5
   fn: conventional_power_plants_DE.csv
@@ -107,11 +105,6 @@ OPSD_VRE_SE:
 OPSD_VRE_GB:
   url: https://data.open-power-system-data.org/renewable_power_plants/2020-08-25/renewable_power_plants_UK.csv
   fn: renewable_power_plants_UK.csv
-OPSD:
-  reliability_score: 5
-Capacity_stats:
-  url: https://data.open-power-system-data.org/national_generation_capacity/2019-02-22/national_generation_capacity_stacked.csv
-  fn: national_generation_capacity_stacked.csv
 UBA:
   net_capacity: false
   reliability_score: 5
@@ -124,7 +117,9 @@ WEPP:
 
 display_net_caps: true
 target_columns:
-    - Name
+    - PlantName
+    - UnitName
+    - OrigName
     - Fueltype
     - Technology
     - Set

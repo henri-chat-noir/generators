@@ -9,14 +9,12 @@ from itertools import combinations
 import logging
 
 from _globals import CONFIG, DATASET_LABELS, SUB_LINK
-from core import _set_path
 
 from utils import parmap
 from duke import duke_link
 from cleaning_functions import clean_technology
 
 logger = logging.getLogger(__name__)
-
 
 def best_matches(links):
     """
@@ -35,7 +33,7 @@ def best_matches(links):
 
     return links
 
-def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_wise=True, **dukeargs):
+def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_wise=True):
     """
     Duke-based horizontal match of two databases. Returns the matched
     dataframe including only the matched entries in a multi-indexed
@@ -55,9 +53,6 @@ def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_w
     
     """
     
-    if not ('singlematch' in dukeargs):
-        dukeargs['singlematch'] = True
-
     pair = np.sort(label_pair)
 
     pair_match_spec = f"matches_{pair[0]}_{pair[1]}.csv"
@@ -79,7 +74,7 @@ def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_w
         # only append if country appears in both dataframse
         if all(sel.any() for sel in sel_country_b):
             datasets = [ df[sel] for df, sel in zip(df_pair, sel_country_b)]
-            out_df = duke_link(datasets[0], datasets[1], country=country, **dukeargs)
+            out_df = duke_link(datasets[0], datasets[1], country=country)
 
         else:
             out_df = pd.DataFrame()
@@ -96,7 +91,7 @@ def compare_two_datasets(df_pair, label_pair, use_saved_matches=False, country_w
             links = links.append(df)
 
     else:
-        links = duke_link(df_pair, labels=label_pair, **dukeargs)
+        links = duke_link(df_pair, labels=label_pair)
 
     matches = best_matches(links)
     matches.to_csv(saving_path)
@@ -143,7 +138,7 @@ def cross_matches(sets_of_pairs, df_labels):
             .drop('length', axis=1)
             .reindex(columns=df_labels))
 
-def link_multiple_datasets(datasets, use_saved_matches=True, **dukeargs):
+def link_multiple_datasets(datasets, use_saved_matches=True):
     """
     Duke-based horizontal match of multiple databases. Returns the
     matching indices of the datasets. Compares all properties of the
@@ -167,7 +162,7 @@ def link_multiple_datasets(datasets, use_saved_matches=True, **dukeargs):
         print()
         logger.info('Comparing {0} with {1}'.format(*dfs_lbs[2:]))
 
-        return compare_two_datasets(dfs_lbs[:2], dfs_lbs[2:], use_saved_matches=use_saved_matches, **dukeargs)
+        return compare_two_datasets(dfs_lbs[:2], dfs_lbs[2:], use_saved_matches=use_saved_matches)
     
     # Returns list of tuples (0, 1), (0, 2), etc.
     combs = list(combinations(range(len(DATASET_LABELS)), 2)) 
@@ -177,7 +172,7 @@ def link_multiple_datasets(datasets, use_saved_matches=True, **dukeargs):
 
     return cross_matches(all_matches, DATASET_LABELS)
 
-def combine_multiple_datasets(dfs, use_saved_matches=True, **dukeargs):
+def combine_multiple_datasets(dfs, use_saved_matches=True):
     """
     Duke-based horizontal match of multiple databases. Returns the
     matched dataframe including only the matched entries in a
@@ -222,7 +217,7 @@ def combine_multiple_datasets(dfs, use_saved_matches=True, **dukeargs):
                 .reindex(columns=CONFIG['target_columns'], level=0)
                 .reset_index(drop=True))
 
-    crossmatches = link_multiple_datasets(dfs, use_saved_matches=use_saved_matches, **dukeargs)
+    crossmatches = link_multiple_datasets(dfs, use_saved_matches=use_saved_matches)
 
     return (combined_dataframe(crossmatches, dfs)
             .reindex(columns=CONFIG['target_columns'], level=0))

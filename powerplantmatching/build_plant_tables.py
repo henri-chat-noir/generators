@@ -3,9 +3,9 @@ import logging
 import pandas as pd
 
 from _globals import CONFIG, DATASET_LABELS, SUB_OUT
-from core import _set_path
+# from core import _set_path
 
-from utils import set_uncommon_fueltypes_to_other, projectID_to_dict, set_column_name, get_name
+from utils import set_uncommon_fueltypes_to_other, projectID_to_dict, get_name
 
 from heuristics import extend_by_non_matched, extend_by_VRE
 import match
@@ -37,7 +37,7 @@ def build_plant_df_alldata(dfs, custom_config={}, **dukeargs):
     **dukeargs : keyword-args for duke
     """
 
-    plants_alldata_df = match.combine_multiple_datasets( dfs, use_saved_matches=True, **dukeargs)
+    plants_alldata_df = match.combine_multiple_datasets(dfs, use_saved_matches=True, **dukeargs)
     
     # This type set should already be part of tidying / normalization, note at this stage
     plants_alldata_df.assign( projectID=lambda df: df.projectID.astype(str) )

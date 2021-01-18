@@ -1,0 +1,54 @@
+﻿from_word,to_word,dataset
+0.3% s,,GEO
+corex,,GEO
+eo 5-ls,,GEO
+for st,,GEO
+indigenous,,GEO
+low btu,,GEO
+steam cycle input,,GEO
+180cst grade furnace oil,furnace oil,GEO
+backed up with,,GEO
+blast furnace,blast furnace gas,GEO
+blast furnance gas,blast furnace gas,GEO
+butiminous,bituminous,GEO
+city gas (from liquified natural gas),liquified natural gas,GEO
+coa;,coal,GEO
+coal black,coal,GEO
+coal subbituminous,sub-bituminous coal,GEO
+coal subbutiminous,sub-bituminous coal,GEO
+coal kuznetsk,coal,GEO
+coal seam gas,coal-seam gas,GEO
+diesel - bs1800,diesel,GEO
+diesel as backup,diesel,GEO
+dis,distillate oil,GEO
+fuel oil heavy and light,fuel oil,GEO
+low pressure natural gas,natural gas,GEO
+intermediate fuel oil 180,intermediate fuel oil,GEO
+jet fuel jp4 5n8,jet fuel,GEO
+lignite (high moisture lignite),high-moisture lignite,GEO
+lignite (high moisture),high-moisture lignite,GEO
+liquified natual gas,liquified natural gas,GEO
+low sulphur fuel oil,fuel oil,GEO
+low sulphur heavy stock (lshs),heavy fuel,GEO
+low-sulphur high speed fuel oil,high speed fuel oil,GEO
+lshs l,low-sulphure high-speed oil,GEO
+"mixed (heavy and crude oil, lng, coal)","heavy fuel oil, crude oil, lng, coal",GEO
+naptha,naphtha,GEO
+natual gas,natural gas,GEO
+natudal gas,natural gas,GEO
+naural gas,natural gas,GEO
+oal bituminous,coal bituminous,GEO
+solid waste 70% of,solid waste,GEO
+sub bituminous,sub-bituminous coal,GEO
+sub -bituminous,sub-bituminous coal,GEO
+subbituminous,sub-bituminous coal,GEO
+subbituminous coal,sub-bituminous coal,GEO
+sub -bituminous coal,sub-bituminous coal,GEO
+sub butiminous coal,sub-bituminous coal,GEO
+switched from furnace oil in 2000,furnace oil,GEO
+woodwaste,wood waste,GEO
+low sulphur heavy stock,low-sulphur heavy stock,GEO
+low-sulphure high-speed oil,low-sulphur high-speed oil,GEO
+high,,GEO
+ifo 180,ifo,GEO
+lshs oil,lshs,GEO

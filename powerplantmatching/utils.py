@@ -5,10 +5,46 @@ Utility functions for checking data completness and supporting other functions
 import os
 import pandas as pd
 
-from _globals import _set_path, CONFIG, COUNTRY_MAP, _package_data, SUB_LAND
+from _globals import CONFIG, COUNTRY_MAP, SUB_LAND
+import _globals as glob
+
 from core import logger
 
-def config_filter(df, name=None):
+def get_data(df, idx_val):
+
+    target_cols = CONFIG['target_columns']
+    if 'projectID' in target_cols:
+        target_cols.remove('projectID')
+
+    # idx_df = df.set_index('projectID')
+    # print(df.index)
+
+    missing_ids_dict = {}
+    missing_ids_dict['ENTSOE'] = ['50WP00000000707U']
+    missing_ids_dict['JRC'] = ['H70', 'H199', 'H223', 'H573', 'H1495', 'H1554', 'H2499', 'H2501', 'H37', 'H2877', 'H2565', 'H3189']
+    missing_ids_dict['CARMA'] = []
+    
+    missing_ids = missing_ids_dict['ENTSOE'] + missing_ids_dict['JRC']
+
+    if idx_val not in missing_ids:
+        data = df.loc[idx_val, target_cols]
+    else:
+        data = pd.Series()
+
+    return data
+
+def convert_to_num(elem):
+
+    if type(elem) == str:
+        no_comma = elem.replace(",", "")
+        num = float(no_comma)
+    else:
+        num = elem
+
+    return num
+
+def config_filter(in_df, name=None):
+
     """
     Convenience function to filter data source according to the config.yaml
     file. Individual query filters are applied if argument 'name' is given.
@@ -22,20 +58,24 @@ def config_filter(df, name=None):
     config : dict, default None
         Configuration overrides varying from the config.yaml file
     """
-    # df = get_obj_if_Acc(df)
 
     # individual filter from config.yaml
+    out_df = in_df.copy()
     if name is not None:
         queries = {k: v for source in CONFIG['matching_sources']
                    for k, v in to_dict_if_string(source).items()}
+    
         if name in queries and queries[name] is not None:
-            df = df.query(queries[name])
+            out_df = out_df.query(queries[name])
+    
     countries = CONFIG['target_countries']
     fueltypes = CONFIG['target_fueltypes']
+
+    out_df = out_df.query("Country in @countries and Fueltype in @fueltypes")
+    out_df = out_df.reindex(columns=CONFIG['target_columns'])
+    out_df = out_df.reset_index(drop=True)
     
-    return (df.query("Country in @countries and Fueltype in @fueltypes")
-            .reindex(columns=CONFIG['target_columns'])
-            .reset_index(drop=True))
+    return out_df
 
 def convert_alpha2_to_country(df):
     # df = get_obj_if_Acc(df)
@@ -58,7 +98,7 @@ def correct_manually(df, name):
         Name of the data source, should be in columns of manual_corrections.csv
     """
     
-    corrections_fn = _package_data('manual_corrections.csv')
+    corrections_fn = glob.package_data('manual_corrections.csv')
     corrections = pd.read_csv(corrections_fn)
 
     corrections = (corrections.query('Source == @name')
@@ -92,11 +132,11 @@ def fill_geoposition(df, use_saved_locations=False, saved_only=False):
                        'want to enable it.')
 
     if use_saved_locations:
-        locs = pd.read_csv(_package_data(
+        locs = pd.read_csv(glob.package_data(
             'parsed_locations.csv'), index_col=[0, 1])
         df = df.where(df[['lat', 'lon']].notnull().all(1),
                       df.drop(columns=['lat', 'lon'])
-                      .join(locs, on=['Name', 'Country']))
+                      .join(locs, on=['PlantName', 'Country']))
     if saved_only:
         return df
 
@@ -107,7 +147,7 @@ def fill_geoposition(df, use_saved_locations=False, saved_only=False):
         axis=1)
     geodata.drop_duplicates(subset=['Name', 'Country'])\
            .set_index(['Name', 'Country'])\
-           .to_csv(_package_data('parsed_locations.csv'), mode='a', header=False)
+           .to_csv(glob.package_data('parsed_locations.csv'), mode='a', header=False)
 
     df.loc[missing, ['lat', 'lon']] = geodata
 
@@ -250,8 +290,8 @@ def parse_Geoposition(location, zipcode='', country='', use_saved_locations=Fals
         return pd.Series({'Name': location, 'Country': country,
                           'lat': gdata.latitude, 'lon': gdata.longitude})
 
+"""
 def parse_if_not_stored(name, update=False, parse_func=None, **kwargs):
-    
     df_config = CONFIG[name]
     path = _set_path(df_config['fn'], SUB_LAND)
 
@@ -266,6 +306,7 @@ def parse_if_not_stored(name, update=False, parse_func=None, **kwargs):
     else:
         data = pd.read_csv(path, **kwargs)
     return data
+"""
 
 def projectID_to_dict(df):
     """
@@ -276,6 +317,7 @@ def projectID_to_dict(df):
             lambda ds: liteval(ds)).unstack()))
     else:
         return df.assign(projectID=df.projectID.apply(lambda x: liteval(x)))
+
 def read_csv_if_string(df):
     """
     Convenience function to import powerplant data source if a string is given.
@@ -283,15 +325,6 @@ def read_csv_if_string(df):
     import data
     if isinstance(data, six.string_types):
         df = getattr(data, df)()
-    return df
-
-def set_column_name(df, name):
-
-    """
-    Helper function to associate dataframe with a name. This is done with the
-    columns-axis name, as pd.DataFrame do not have a name attribute.
-    """
-    df.columns.name = name
     return df
 
 def set_uncommon_fueltypes_to_other(df, fillna_other=True, **kwargs):

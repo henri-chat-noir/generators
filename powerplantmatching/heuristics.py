@@ -2,8 +2,8 @@
 Functions to modify and adjust power plant datasets
 """
 
-# from core import _get_config, _package_data, get_obj_if_Acc
-# from core import get_obj_if_Acc
+from _globals import CONFIG, SUB_LAND
+import _globals as glob
 from utils import lookup, get_name
 
 import pandas as pd
@@ -11,7 +11,6 @@ import numpy as np
 import logging
 from six import iteritems
 logger = logging.getLogger(__name__)
-
 
 def extend_by_non_matched(df, extend_by, label=None, query=None,
                           aggregate_added_data=True,
@@ -418,20 +417,25 @@ def remove_oversea_areas(df, lat=[36, 72], lon=[-10.6, 31]):
                  (df.lon >= lon[0]) & (df.lon <= lon[1]))]
     return df
 
-def gross_to_net_factors(reference='opsd', aggfunc='median',
+def gross_to_net_factors(reference='opsd_de', aggfunc='median',
                          return_entire_data=False):
     """
     """
     from cleaning_functions import clean_technology
-    if reference == 'opsd':
-        from data import OPSD
-        reference = OPSD(rawDE=True)
+
+    if reference == 'opsd_de':
+        ds_config = CONFIG['OPSD_DE']
+        ds_spec = glob.set_path(ds_config['fn'], SUB_LAND)
+        reference = pd.read_csv(ds_spec)
+
     df = reference.copy()
     df = df[df.capacity_gross_uba.notnull() & df.capacity_net_bnetza.notnull()]
     df.loc[:, 'ratio'] = df.capacity_net_bnetza / df.capacity_gross_uba
     df = df[df.ratio <= 1.0]  # drop obvious data errors
+
     if return_entire_data:
-        return df
+        out_df = df
+        
     else:
         df.energy_source_level_2.fillna(value=df.fuel, inplace=True)
         df.replace(dict(energy_source_level_2={
@@ -450,11 +454,12 @@ def gross_to_net_factors(reference='opsd', aggfunc='median',
                       df.energy_source_level_2.str.title()))
         ratios = df.groupby(['energy_source_level_2',
                              'Technology']).ratio.mean()
-        return ratios
+        out_df = ratios
+    
+    return out_df
 
 def scale_to_net_capacities(df, is_gross=True, catch_all=True):
 
-    # df = get_obj_if_Acc(df)
     if is_gross:
         factors = gross_to_net_factors()
         for ftype, tech in factors.index.values:

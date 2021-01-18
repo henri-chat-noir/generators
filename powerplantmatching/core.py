@@ -2,7 +2,8 @@ import yaml
 import logging
 from os import environ, makedirs, path
 
-from _globals import _set_path, CONFIG, PACKAGE_CONFIG, SUB_LAND, SUB_OUT
+from _globals import CONFIG, PACKAGE_CONFIG, SUB_LAND, SUB_OUT
+import _globals as glob
 
 """
 def _data_in(filename):
@@ -33,18 +34,18 @@ makedirs(path.join(ppm_data_dir, SUB_OUT), exist_ok=True)
 # del _data_dir
 # del _writable_dir
 
-if not path.exists(_set_path('.', SUB_LAND)):
-    makedirs(_set_path('.', SUB_LAND))
+if not path.exists(glob.set_path('.', SUB_LAND)):
+    makedirs(glob.set_path('.', SUB_LAND))
 
-data_out_path = _set_path('.', SUB_OUT)
+data_out_path = glob.set_path('.', SUB_OUT)
 
 if not path.isdir(data_out_path):
     makedirs( path.abspath(data_out_path) )
-    makedirs( path.abspath( _set_path('matches', SUB_OUT)))
-    makedirs(path.abspath(_set_path('aggregations', SUB_OUT)))
+    makedirs( path.abspath( glob.set_path('matches', SUB_OUT)))
+    makedirs(path.abspath(glob.set_path('aggregations', SUB_OUT)))
     logging.info(f"Outputs for this configuration will be saved under {data_out_path}")
             
-    with open(_set_path('config.yaml', SUB_OUT), 'w') as file:
+    with open(glob.set_path('config.yaml', SUB_OUT), 'w') as file:
         yaml.dump(CONFIG, file, default_flow_style=False)
 
 # Logging: General Settings

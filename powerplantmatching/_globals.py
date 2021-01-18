@@ -2,9 +2,17 @@ from os import path
 import pandas as pd
 import yaml
 
-NEW_ROUTE = {'ENTSOE', 'GEO'}
+import file_handling as fh
 
-def _package_data(filename):
+ALL_DATASETS = {'CARMA', 'ENTSOE', 'ESE', 'GEO', 'GPD', 'JRC', 'OPSD_DE', 'OPSD_EU'}
+NOW_GONE_IDS = ['50WP00000000707U', 'H70', 'H199', 'H223', 'H573', 'H1495', 'H1554', 'H2499', 'H2501', 'H37', 'H2877', 'H2565', 'H3189']
+
+MATCH_COLS = ["GroupKey", "Status", "PlantName", 
+            	"OrigName", "Capacity", "Country", "Dataset", "EIC",
+                 "Fueltype", "Set", "Technology", "lat", "lon", "UnitName"
+                ]
+
+def package_data(filename):
         path_str = path.join(PACKAGE_CONFIG['repo_data_dir'], filename)
         return path_str
 
@@ -25,8 +33,8 @@ def _get_config(filename=None, **overrides):
         The configuration dictionary
     """
     
-    package_config_spec = _package_data('config.yaml')
-    custom_config = filename if filename else _package_data('custom.yaml')
+    package_config_spec = package_data('config.yaml')
+    custom_config = filename if filename else package_data('custom.yaml')
 
     with open(package_config_spec) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
@@ -50,7 +58,7 @@ def _get_config(filename=None, **overrides):
 
     return config
 
-def _set_path(filename, sub_dir=None):
+def set_path(filename, sub_dir=None):
 
     if sub_dir is None:
         path_str = path.join(PACKAGE_CONFIG['data_dir'], filename) 
@@ -59,11 +67,17 @@ def _set_path(filename, sub_dir=None):
 
     return path_str
 
+def set_diag_path(fn, sub_dir, sub_sub_dir='0_diagnostics'):
+
+    path_str = path.join(PACKAGE_CONFIG['data_dir'], sub_dir, sub_sub_dir, fn) 
+
+    return path_str
+
 # Set-up dictionary for folder locations
 ppm_data_dir = r"C:\Google Drive\0 MVR_Platform_Data\ppm_data"
 
 repo_data_dir = path.join(path.dirname(__file__), 'package_data')
-
+SUB_DEBUG = '00_debug'
 SUB_LAND = '01_landing'
 SUB_CLEAN = '02_cleaned'
 SUB_TAG = '03_tag_cliques'
@@ -72,6 +86,13 @@ SUB_MERGE = '04_merged'
 SUB_GROUP = '06_grouped'
 SUB_LINK = '08_linked'
 SUB_OUT = '09_output'
+SUB_DIAG = '99_diagnostics'
+
+
+# FILE TAGS (used for interchange between processing stages)
+# ==========================================================
+TAG_CLEAN = "clean"
+
 
 PACKAGE_CONFIG = {'repo_data_dir': repo_data_dir,
                   'custom_config': path.join(repo_data_dir, '.powerplantmatching_config.yaml'),
@@ -87,5 +108,8 @@ DATASET_LABELS = [label for label in CONFIG['matching_sources']]
 #   return df_by_name(datasets)
 DATASET_LABELS.sort()
     
-COUNTRY_MAP = pd.read_csv(_package_data('country_codes.csv'))\
+COUNTRY_MAP = pd.read_csv(package_data('country_codes.csv'))\
                 .replace({'name': {'Czechia': 'Czech Republic'}})
+
+# new_id_spec = package_data("new_ids.csv")
+# NEW_IDS_DF = pd.read_csv(new_id_spec, index_col="projectID")
