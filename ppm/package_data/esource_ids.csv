@@ -1,0 +1,15 @@
+﻿esource_id,esource_label,plant_suffix,comment
+BIO,Bioenergy,power station,
+COA,Coal,coal-fired power station,"Includes non-bio solids that are not ""coal', e.g. pet coke"
+GAS,Gas,gas-fired power station,"Includes landfill gas, which is NOT in Bioenergy"
+GEO,Geothermal,geothermal plant,
+HYD,Hydro,hydroelectric dam,"Resevoir, run-of-river, and 'storage'.  Need to consider whether"
+LIQ,Liquids,power station,"Equivalent to ""Petroleum liquids"", but includes syn fuels, liquified petroleum gas, natural gas condensates, and non-oil derived naphtha"
+MAR,Marine,power station,"Tidal and wave.  Probably evaluate whether should be absorbed into ""Other"""
+NUC,Nuclear,nuclear plant,
+OTH,Mixed / Unspecified / Other,electric power plant,"No obvious specifics yet, as design is to retain for literally plants that have not (yet) been characterized."
+SOL,Solar,solar farm,PV and concentrated solar (CSP)
+STO,Storage,storage facility,
+TRN,Transmission,transmission,
+WND,Wind,wind farm,Onshore vs. offshore -- otherwise no delineation (yet)
+WST,Waste,waste-to-energy facility,Municipal and industrial (solid) waste disposal generation

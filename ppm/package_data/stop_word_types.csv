@@ -1,0 +1,16 @@
+﻿word_type,count,name_retain,name_yes,explanation,examples,further_work
+ABB,25,,,"abbreviations, including likely company indicators, e.g. ikw, kw","ikw, kw",Consider all-caps adjustment
+CNTRY,35,,,country (in plant_name),,
+COMP,8,,,company / entity designators,"ltd, gmbh, etc.",
+FUEL,26,,,Fuel_type (esource) indicator (in plant_name),,Sometimes both fuel and tech indicated by name element
+TECH,15,,,Technology-type indicator (in plant_name),,
+GEO,26,1,GEO,common geographical or location modifiers,süd,
+OWN,12,,,"indicator of large-scale / utility owner, delineation of separate plants on same site","enel, edison, endesa","Should be whitelisted to prevent removal, if common.  However, can be used to confirm similariy of multi-company 'site'."
+POW,36,,,non-delineating power station or 'factory' words,"energia, station, center, park",
+PREP,25,1,PREP,prepositions / articles / conjunctions,,Consider retaining as lower case as/if re-included back in display name
+SITE,25,1,SITE,"non-locational, site modifiers (not otherwise clearly power station related) -- but often white-listed","werk, refinery, hospital","Sometimes hard to separate from ""SUB"" words out of context, e.g. ""mill"""
+SUB,33,1,SUB,"common 'sub words' to place names (not otherwise clearly ""geo"")","mill, hill, new",
+TYPO,2,,,,,locate and correct in original data
+UNK,25,1,UNK,"unknown, investigate",,
+WHITE,0,,,"whitelist - even though commonly occurring, retain as has some power of differentiation / substance to name","mill, santa",
+RET,0,,,retain / whitelist,,

@@ -1,10 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\powerplantmatching",
-    "\\powerplantmatching\\package_data",
-    "\\test"
+    "\\entsoe_repo",
+    "\\entsoe_repo\\entsoe"
   ],
-  "SelectedNode": "\\powerplantmatching\\stage.py",
+  "SelectedNode": "\\entsoe_repo\\entsoe\\mappings.py",
   "PreviewInSolutionExplorer": false
 }

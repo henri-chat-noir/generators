@@ -1,0 +1,28 @@
+﻿psr_code,psr_label,esource_id,escourse_label,ds_name
+B02,Fossil Brown coal/Lignite,COA,Coal,ENTSOE
+B05,Fossil Hard coal,COA,Coal,ENTSOE
+B08,Fossil Peat,COA,Coal,ENTSOE
+B04,Fossil Gas,GAS,Gas,ENTSOE
+B03,Fossil Coal-derived gas,GAS,Gas,ENTSOE
+B09,Geothermal,GEO,Geothermal,ENTSOE
+B10,Hydro Pumped Storage,HYD,Hydro,ENTSOE
+B11,Hydro Run-of-river and poundage,HYD,Hydro,ENTSOE
+B12,Hydro Water Reservoir,HYD,Hydro,ENTSOE
+B14,Nuclear,NUC,Nuclear,ENTSOE
+B06,Fossil Oil,LIQ,Liquids,ENTSOE
+B07,Fossil Oil shale,LIQ,Liquids,ENTSOE
+B16,Solar,SOL,Solar,ENTSOE
+B19,Wind Onshore,WND,Wind,ENTSOE
+B18,Wind Offshore,WND,Wind,ENTSOE
+B17,Waste,WST,Waste,ENTSOE
+B01,Biomass,BIO,Bioenergy,ENTSOE
+B13,Marine,MAR,Marine,ENTSOE
+B15,Other renewable,OTH,,ENTSOE
+A03,Mixed,OTH,Mixed / Unspecified / Other,ENTSOE
+B20,Other,OTH,Mixed / Unspecified / Other,ENTSOE
+A04,Generation,OTH,n/a,ENTSOE
+A05,Load,TRN,Transmission,ENTSOE
+B21,AC Link,TRN,Transmission,ENTSOE
+B22,DC Link,TRN,Transmission,ENTSOE
+B23,Substation,TRN,Transmission,ENTSOE
+B24,Transformer,TRN,Transmission,ENTSOE
