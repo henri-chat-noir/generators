@@ -7,6 +7,7 @@ import stage
 import duke
 
 """
+# Confirm sync
 
 fresna_list = diag.build_id_groups()
 
